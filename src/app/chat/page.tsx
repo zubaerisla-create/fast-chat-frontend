@@ -8,26 +8,21 @@ import EmptyChat from '@/components/chat/EmptyChat';
 
 export default function ChatPage() {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
-  const [showSidebar, setShowSidebar] = useState(true);
 
   const handleSelectConversation = (conv: Conversation) => {
     setActiveConversation(conv);
-    // On mobile, hide sidebar when conversation selected
-    if (window.innerWidth < 768) setShowSidebar(false);
   };
 
   const handleBack = () => {
-    setShowSidebar(true);
     setActiveConversation(null);
   };
 
   return (
-    <div className="flex h-screen bg-[#0D0D1A] overflow-hidden">
-      {/* Sidebar - hidden on mobile when chat open */}
+    <div className="flex h-[100dvh] bg-[#0D0D1A] overflow-hidden">
+      {/* Sidebar - full width on mobile unless hidden by active conversation */}
       <div
-        className={`${
-          showSidebar ? 'flex' : 'hidden md:flex'
-        } flex-shrink-0`}
+        className={`flex-shrink-0 w-full md:w-auto h-full ${activeConversation ? 'hidden md:flex' : 'flex'
+          }`}
       >
         <Sidebar
           activeConversationId={activeConversation?._id}
@@ -36,7 +31,7 @@ export default function ChatPage() {
       </div>
 
       {/* Main chat area */}
-      <div className={`flex-1 flex flex-col ${!showSidebar || activeConversation ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 min-w-0 h-full flex flex-col ${!activeConversation ? 'hidden md:flex' : 'flex'}`}>
         {activeConversation ? (
           <ChatWindow
             key={activeConversation._id}

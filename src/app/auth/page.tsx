@@ -33,7 +33,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D1A] flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#0D0D1A] flex items-center justify-center relative overflow-hidden">
       {/* Background orbs */}
       <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#7C6EFF]/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#A89CFF]/8 blur-[100px] pointer-events-none" />
@@ -56,11 +56,10 @@ export default function AuthPage() {
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                className={`flex-1 py-2 rounded-lg text-sm font-sans font-medium transition-all duration-200 ${
-                  mode === m
+                className={`flex-1 py-2 rounded-lg text-sm font-sans font-medium transition-all duration-200 ${mode === m
                     ? 'bg-[#7C6EFF] text-white shadow-lg shadow-[#7C6EFF]/20'
                     : 'text-white/40 hover:text-white/70'
-                }`}
+                  }`}
               >
                 {m === 'login' ? 'Sign In' : 'Sign Up'}
               </button>
