@@ -31,7 +31,13 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     socketRef.current = socket;
 
-    socket.on('connect', () => console.log('Socket connected'));
+    socket.on('connect', () => {
+      console.log('Socket connected');
+      if (user?._id) {
+        socket.emit('userOnline', user._id);
+        console.log('Emitted userOnline for:', user._id);
+      }
+    });
     socket.on('onlineUsers', (users: string[]) => setOnlineUsers(users));
     socket.on('disconnect', () => console.log('Socket disconnected'));
 
@@ -51,7 +57,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   const onNewMessage = (callback: (msg: Message) => void) => {
     const socket = socketRef.current;
-    if (!socket) return () => {};
+    if (!socket) return () => { };
     socket.on('newMessage', callback);
     return () => socket.off('newMessage', callback);
   };

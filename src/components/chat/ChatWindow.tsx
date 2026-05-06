@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, ArrowLeft, Phone, Video } from 'lucide-react';
 import { Conversation, Message } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/context/SocketContext';
 import { useCall } from '@/context/CallContext';
 import { getMessages, sendMessage } from '@/lib/api';
 import MessageBubble from './MessageBubble';
@@ -30,6 +31,7 @@ function DateDivider({ date }: { date: string }) {
 
 export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const { user } = useAuth();
+  const { onlineUsers } = useSocket();
   const { startCall } = useCall();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
@@ -39,6 +41,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const other = conversation.participants.find((p) => p._id !== user?._id);
+  const isOnline = other ? onlineUsers.includes(other._id) : false;
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -126,11 +129,11 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
             <ArrowLeft size={16} />
           </button>
         )}
-        <Avatar username={other?.username || '?'} size="md" isOnline={other?.isOnline} />
+        <Avatar username={other?.username || '?'} size="md" isOnline={isOnline} />
         <div>
           <h2 className="font-display font-semibold text-white text-base">{other?.username}</h2>
           <p className="text-xs text-white/30 font-sans">
-            {other?.isOnline ? (
+            {isOnline ? (
               <span className="text-green-400">Online</span>
             ) : (
               'Offline'

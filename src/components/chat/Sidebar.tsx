@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, LogOut, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/context/SocketContext';
 import { getConversations, searchUsers, createConversation } from '@/lib/api';
 import { Conversation, User } from '@/types';
 import Avatar from '@/components/ui/Avatar';
@@ -18,6 +19,7 @@ interface SidebarProps {
 
 export default function Sidebar({ activeConversationId, onSelectConversation, onConversationsUpdate }: SidebarProps) {
   const { user, logout } = useAuth();
+  const { onlineUsers } = useSocket();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,6 +188,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
           <div className="space-y-0.5 pb-4">
             {conversations.map((conv) => {
               const other = getOtherParticipant(conv);
+              const isOnline = other ? onlineUsers.includes(other._id) : false;
               const isActive = conv._id === activeConversationId;
               return (
                 <button
@@ -194,7 +197,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left sidebar-item transition-all ${isActive ? 'active' : ''
                     }`}
                 >
-                  <Avatar username={other?.username || '?'} size="md" isOnline={other?.isOnline} />
+                  <Avatar username={other?.username || '?'} size="md" isOnline={isOnline} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-sans font-medium text-white truncate">
