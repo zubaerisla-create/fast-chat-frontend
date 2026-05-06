@@ -20,7 +20,9 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       Cookies.remove('token');
       Cookies.remove('user');
-      window.location.href = '/auth';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth';
+      }
     }
     return Promise.reject(err);
   }

@@ -13,11 +13,16 @@ export const useAgora = () => {
     const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
 
     useEffect(() => {
-        const c = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
-        setClient(c);
+        const init = async () => {
+            const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
+            const c = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+            setClient(c);
+        };
+
+        init();
 
         return () => {
-            c.leave();
+            client?.leave();
         };
     }, []);
 
@@ -54,6 +59,7 @@ export const useAgora = () => {
     const publishTracks = useCallback(
         async (type: 'audio' | 'video') => {
             if (!client) return;
+            const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
 
             const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
             setLocalAudioTrack(audioTrack);
