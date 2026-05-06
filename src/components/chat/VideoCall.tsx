@@ -19,14 +19,17 @@ export default function VideoCall({ localTrack, remoteUsers }: VideoCallProps) {
         return () => {
             localTrack?.stop();
         };
-    }, [localTrack]);
+    }, [localTrack, localRef]);
 
     useEffect(() => {
         const remoteUser = remoteUsers[0];
-        if (remoteUser && remoteRef.current) {
-            remoteUser.videoTrack?.play(remoteRef.current);
+        if (remoteUser?.videoTrack && remoteRef.current) {
+            remoteUser.videoTrack.play(remoteRef.current);
         }
-    }, [remoteUsers]);
+        return () => {
+            remoteUser?.videoTrack?.stop();
+        };
+    }, [remoteUsers, remoteRef]);
 
     return (
         <div className="relative w-full h-full bg-[#0D0D1A] overflow-hidden rounded-3xl">

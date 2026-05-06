@@ -13,24 +13,30 @@ export const useAgora = () => {
     const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
 
     useEffect(() => {
+        let activeClient: IAgoraRTCClient | null = null;
         const init = async () => {
             const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
-            const c = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
-            setClient(c);
+            activeClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+            setClient(activeClient);
         };
 
         init();
 
         return () => {
-            client?.leave();
+            if (activeClient) {
+                console.log('Agora cleaning up...');
+                activeClient.leave();
+            }
         };
     }, []);
 
     const joinChannel = useCallback(
         async (appId: string, channelName: string, token: string, uid: number) => {
             if (!client) return;
+            console.log('Agora joining channel:', channelName);
 
             client.on('user-published', async (user, mediaType) => {
+                console.log('Agora user published:', user.uid, mediaType);
                 await client.subscribe(user, mediaType);
                 if (mediaType === 'video') {
                     setRemoteUsers((prev) => {
@@ -39,6 +45,7 @@ export const useAgora = () => {
                     });
                 }
                 if (mediaType === 'audio') {
+                    console.log('Playing remote audio for:', user.uid);
                     user.audioTrack?.play();
                 }
             });
@@ -59,22 +66,24 @@ export const useAgora = () => {
     const publishTracks = useCallback(
         async (type: 'audio' | 'video') => {
             if (!client) return;
+            console.log('Agora publishing tracks type:', type);
             const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
 
-            const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-            setLocalAudioTrack(audioTrack);
+            try {
+                const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                setLocalAudioTrack(audioTrack);
 
-            if (type === 'video') {
-                try {
+                if (type === 'video') {
                     const videoTrack = await AgoraRTC.createCameraVideoTrack();
                     setLocalVideoTrack(videoTrack);
+                    console.log('Publishing audio and video tracks');
                     await client.publish([audioTrack, videoTrack]);
-                } catch (err) {
-                    console.error('Camera access denied', err);
+                } else {
+                    console.log('Publishing audio track only');
                     await client.publish([audioTrack]);
                 }
-            } else {
-                await client.publish([audioTrack]);
+            } catch (err) {
+                console.error('Track creation/publish failed:', err);
             }
         },
         [client]
