@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, Phone, Video } from 'lucide-react';
 import { Conversation, Message } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { useCall } from '@/context/CallContext';
 import { getMessages, sendMessage } from '@/lib/api';
 import MessageBubble from './MessageBubble';
 import Avatar from '@/components/ui/Avatar';
@@ -29,6 +30,7 @@ function DateDivider({ date }: { date: string }) {
 
 export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const { user } = useAuth();
+  const { startCall } = useCall();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -134,6 +136,23 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
               'Offline'
             )}
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={() => other && startCall(other._id, 'audio')}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
+            title="Audio Call"
+          >
+            <Phone size={18} />
+          </button>
+          <button
+            onClick={() => other && startCall(other._id, 'video')}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
+            title="Video Call"
+          >
+            <Video size={20} />
+          </button>
         </div>
       </div>
 

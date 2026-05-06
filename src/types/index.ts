@@ -51,3 +51,22 @@ export interface PaginatedMessages {
   pages: number;
   messages: Message[];
 }
+
+export interface InitiateCallData {
+  callerId: string;
+  receiverId: string;
+  channelName: string;
+  callType: 'audio' | 'video';
+}
+
+export interface AgoraTokenResponse {
+  token: string;
+  appId: string;
+}
+
+export interface CallData {
+  callerId: User;
+  receiverId: string;
+  channelName: string;
+  callType: 'audio' | 'video';
+}

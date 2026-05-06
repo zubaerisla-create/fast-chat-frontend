@@ -2,7 +2,7 @@
 
 interface AvatarProps {
   username: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   isOnline?: boolean;
 }
 
@@ -10,6 +10,8 @@ const sizes = {
   sm: 'w-8 h-8 text-xs',
   md: 'w-10 h-10 text-sm',
   lg: 'w-12 h-12 text-base',
+  xl: 'w-20 h-20 text-2xl',
+  '2xl': 'w-32 h-32 text-4xl',
 };
 
 const colors = [
@@ -38,9 +40,8 @@ export default function Avatar({ username, size = 'md', isOnline }: AvatarProps)
       </div>
       {isOnline !== undefined && (
         <span
-          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#0D0D1A] ${
-            isOnline ? 'bg-green-400 online-pulse' : 'bg-white/20'
-          }`}
+          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#0D0D1A] ${isOnline ? 'bg-green-400 online-pulse' : 'bg-white/20'
+            }`}
         />
       )}
     </div>

@@ -50,4 +50,14 @@ export const sendMessage = (conversationId: string, text: string) =>
 export const getMessages = (conversationId: string, page = 1, limit = 50) =>
   api.get(`/api/messages/${conversationId}?page=${page}&limit=${limit}`);
 
+// Agora & Calling
+export const getAgoraToken = (channelName: string, uid: number) =>
+  api.post('/api/agora/token', { channelName, uid });
+
+export const initiateCall = (data: { callerId: string; receiverId: string; channelName: string; callType: 'audio' | 'video' }) =>
+  api.post('/api/call/initiate', data);
+
+export const endCall = (channelName: string, userId: string) =>
+  api.post('/api/call/end', { channelName, userId });
+
 export default api;
