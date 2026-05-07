@@ -42,6 +42,8 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const [isVideoOff, setIsVideoOff] = useState(false);
     const isProcessing = useRef(false);
 
+    const { leaveChannel: agoraLeave } = agora;
+
     const cleanup = useCallback(async () => {
         console.log('[CallContext] Cleaning up local state');
         // Reset state immediately for responsive UI
@@ -54,13 +56,13 @@ export function CallProvider({ children }: { children: ReactNode }) {
         // Then do the heavy lifting of leaving the channel
         isProcessing.current = true;
         try {
-            await agora.leaveChannel();
+            await agoraLeave();
         } catch (err) {
             console.error('[CallContext] Error during agora cleanup:', err);
         } finally {
             isProcessing.current = false;
         }
-    }, [agora]);
+    }, [agoraLeave]);
 
     // Handle Socket events
     useEffect(() => {
