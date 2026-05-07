@@ -65,25 +65,30 @@ export const useAgora = () => {
             const activeClient = clientRef.current;
 
             activeClient.on('user-published', async (user, mediaType) => {
-                console.log(`[Agora] User published: ${user.uid} (${mediaType})`);
+                console.log(`[Agora] Remote user published: ${user.uid} (${mediaType})`);
                 try {
                     await activeClient.subscribe(user, mediaType);
-                    if (mediaType === 'video') {
-                        setRemoteUsers((prev) => {
-                            if (prev.find((u) => u.uid === user.uid)) return prev;
-                            return [...prev, user];
-                        });
-                    }
+                    console.log(`[Agora] Subscribed to ${user.uid} (${mediaType})`);
+
+                    setRemoteUsers((prev) => {
+                        if (prev.find((u) => u.uid === user.uid)) return prev;
+                        return [...prev, user];
+                    });
+
                     if (mediaType === 'audio') {
+                        console.log(`[Agora] Attempting to play audio for: ${user.uid}`);
                         user.audioTrack?.play();
                     }
                 } catch (err) {
-                    console.error('[Agora] Subscribe error:', err);
+                    console.error('[Agora] Subscription error:', err);
                 }
             });
 
             activeClient.on('user-unpublished', (user, mediaType) => {
-                if (mediaType === 'video') {
+                console.log(`[Agora] Remote user unpublished: ${user.uid} (${mediaType})`);
+                // Only remove from remoteUsers if both tracks are gone or it's a specific type
+                // For simplicity in 1-to-1, we can just check if the user still has tracks
+                if (!user.hasAudio && !user.hasVideo) {
                     setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
                 }
             });

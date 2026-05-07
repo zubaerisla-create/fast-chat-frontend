@@ -8,11 +8,13 @@ interface AudioCallProps {
     isConnected: boolean;
 }
 
-export default function AudioCall({ otherUser, isConnected }: AudioCallProps) {
+export default function AudioCall({ otherUser, isConnected, remoteConnected }: AudioCallProps & { remoteConnected?: boolean }) {
+    const statusText = remoteConnected ? 'On call' : (isConnected ? 'Connecting...' : 'Calling...');
+
     return (
         <div className="w-full h-full flex flex-col items-center justify-center gap-8 bg-gradient-to-b from-[#1A1A2E] to-[#0D0D1A]">
             <div className="relative">
-                <div className={`absolute inset-0 rounded-full bg-[#7C6EFF]/20 blur-3xl animate-pulse ${isConnected ? 'scale-150' : 'scale-110'}`} />
+                <div className={`absolute inset-0 rounded-full bg-[#7C6EFF]/20 blur-3xl animate-pulse ${remoteConnected ? 'scale-150' : 'scale-110'}`} />
                 <div className="relative z-10 p-2 rounded-full border-2 border-white/10 glass">
                     <Avatar username={otherUser?.username || '?'} size="xl" />
                 </div>
@@ -21,7 +23,7 @@ export default function AudioCall({ otherUser, isConnected }: AudioCallProps) {
             <div className="text-center space-y-2 z-10">
                 <h2 className="text-3xl font-display font-bold text-white">{otherUser?.username}</h2>
                 <p className="text-[#7C6EFF] font-medium tracking-wide scale-110 animate-pulse">
-                    {isConnected ? 'On call' : 'Calling...'}
+                    {statusText}
                 </p>
             </div>
 
