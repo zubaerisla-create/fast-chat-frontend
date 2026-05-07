@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, LogOut, MessageSquare } from 'lucide-react';
+import { Search, Plus, LogOut, MessageSquare, Settings2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
 import { getConversations, searchUsers, createConversation } from '@/lib/api';
@@ -10,6 +10,7 @@ import Avatar from '@/components/ui/Avatar';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import ProfileModal from './ProfileModal';
 
 interface SidebarProps {
   activeConversationId?: string;
@@ -27,6 +28,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
   const [isSearching, setIsSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -101,6 +103,13 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
               <Plus size={16} />
             </button>
             <button
+              onClick={() => setShowProfileModal(true)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
+              title="Profile Settings"
+            >
+              <Settings2 size={16} />
+            </button>
+            <button
               onClick={handleLogout}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-all"
             >
@@ -111,7 +120,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
 
         {/* User info */}
         <div className="flex items-center gap-3">
-          <Avatar username={user?.username || ''} size="sm" isOnline={true} />
+          <Avatar username={user?.username || ''} src={user?.avatar} size="sm" isOnline={true} />
           <div className="min-w-0">
             <p className="text-sm font-sans font-medium text-white truncate">{user?.username}</p>
             <p className="text-xs text-white/30 font-sans truncate">{user?.email}</p>
@@ -144,7 +153,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
                   onClick={() => handleStartConversation(u._id)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[#7C6EFF]/10 transition-all text-left"
                 >
-                  <Avatar username={u.username} size="sm" />
+                  <Avatar username={u.username} src={u.avatar} size="sm" />
                   <div className="min-w-0">
                     <p className="text-sm font-sans text-white truncate">{u.username}</p>
                     <p className="text-xs text-white/30 font-sans truncate">{u.email}</p>
@@ -197,7 +206,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left sidebar-item transition-all ${isActive ? 'active' : ''
                     }`}
                 >
-                  <Avatar username={other?.username || '?'} size="md" isOnline={isOnline} />
+                  <Avatar username={other?.username || '?'} src={other?.avatar} size="md" isOnline={isOnline} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-sans font-medium text-white truncate">
@@ -219,6 +228,8 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
           </div>
         )}
       </div>
+
+      <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
     </div>
   );
 }

@@ -39,6 +39,10 @@ export const loginUser = (data: { email: string; password: string }) =>
 export const getAllUsers = () => api.get('/api/users');
 export const searchUsers = (query: string) => api.get(`/api/users/search?query=${query}`);
 export const getUserById = (id: string) => api.get(`/api/users/${id}`);
+export const updateProfile = (data: FormData) =>
+  api.put('/api/users/profile', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 
 // Conversations
 export const createConversation = (receiverId: string) =>

@@ -9,6 +9,7 @@ interface AuthContextType {
   token: string | null;
   login: (user: User, token: string) => void;
   logout: () => void;
+  updateUser: (user: User) => void;
   isLoading: boolean;
 }
 
@@ -26,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
-      } catch {}
+      } catch { }
     }
     setIsLoading(false);
   }, []);
@@ -45,8 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     Cookies.remove('user');
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    Cookies.set('user', JSON.stringify(updatedUser), { expires: 7 });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

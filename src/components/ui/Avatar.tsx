@@ -2,6 +2,7 @@
 
 interface AvatarProps {
   username: string;
+  src?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   isOnline?: boolean;
 }
@@ -27,16 +28,20 @@ function getColor(username: string) {
   return colors[index];
 }
 
-export default function Avatar({ username, size = 'md', isOnline }: AvatarProps) {
+export default function Avatar({ username, src, size = 'md', isOnline }: AvatarProps) {
   const initial = username?.[0]?.toUpperCase() || '?';
   const color = getColor(username || '');
 
   return (
     <div className="relative flex-shrink-0">
       <div
-        className={`${sizes[size]} rounded-full bg-gradient-to-br ${color} flex items-center justify-center font-display font-bold text-white`}
+        className={`${sizes[size]} rounded-full overflow-hidden bg-gradient-to-br ${color} flex items-center justify-center font-display font-bold text-white shadow-inner`}
       >
-        {initial}
+        {src ? (
+          <img src={src} alt={username} className="w-full h-full object-cover" />
+        ) : (
+          initial
+        )}
       </div>
       {isOnline !== undefined && (
         <span
