@@ -47,8 +47,20 @@ export const getConversations = () => api.get('/api/conversations');
 export const getConversationById = (id: string) => api.get(`/api/conversations/${id}`);
 
 // Messages
-export const sendMessage = (conversationId: string, text: string) =>
-  api.post('/api/messages', { conversationId, text });
+export const sendMessage = (
+  conversationId: string,
+  text: string,
+  fileData?: { fileUrl?: string; fileType?: string; fileName?: string; fileSize?: number }
+) =>
+  api.post('/api/messages', { conversationId, text, ...fileData });
+
+export const uploadFile = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/api/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
 export const getMessages = (conversationId: string, page = 1, limit = 50) =>
   api.get(`/api/messages/${conversationId}?page=${page}&limit=${limit}`);
 

@@ -18,6 +18,10 @@ export interface Message {
   };
   text: string;
   isRead: boolean;
+  fileUrl?: string;
+  fileType?: 'image' | 'video' | 'file';
+  fileName?: string;
+  fileSize?: number;
   createdAt: string;
   updatedAt?: string;
 }
