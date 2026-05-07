@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, ArrowLeft, Phone, Video, Paperclip, X, Image as ImageIcon, File as FileIcon, Film } from 'lucide-react';
+import { Send, ArrowLeft, Phone, Video, Paperclip, X, Image as ImageIcon, File as FileIcon, Film, Info } from 'lucide-react';
 import { Conversation, Message } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
@@ -11,6 +11,7 @@ import MessageBubble from './MessageBubble';
 import Avatar from '@/components/ui/Avatar';
 import toast from 'react-hot-toast';
 import { format, isToday, isYesterday } from 'date-fns';
+import ConversationInfo from './ConversationInfo';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -44,6 +45,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   const other = conversation.participants.find((p) => p._id !== user?._id);
   const isOnline = other ? onlineUsers.includes(other._id) : false;
@@ -239,6 +241,13 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           >
             <Video size={20} />
           </button>
+          <button
+            onClick={() => setShowInfo(true)}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showInfo ? 'text-[#7C6EFF] bg-[#7C6EFF]/10' : 'text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10'}`}
+            title="Conversation Info"
+          >
+            <Info size={20} />
+          </button>
         </div>
       </div>
 
@@ -363,6 +372,15 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           Press Enter to send · Shift+Enter for new line
         </p>
       </div>
+
+      {other && (
+        <ConversationInfo
+          isOpen={showInfo}
+          onClose={() => setShowInfo(false)}
+          user={other}
+          conversationId={conversation._id}
+        />
+      )}
     </div>
   );
 }

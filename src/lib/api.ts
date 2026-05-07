@@ -49,6 +49,7 @@ export const createConversation = (receiverId: string) =>
   api.post('/api/conversations', { receiverId });
 export const getConversations = () => api.get('/api/conversations');
 export const getConversationById = (id: string) => api.get(`/api/conversations/${id}`);
+export const getConversationMedia = (id: string) => api.get(`/api/conversations/${id}/media`);
 
 // Messages
 export const sendMessage = (
