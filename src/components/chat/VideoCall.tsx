@@ -57,7 +57,7 @@ export default function VideoCall({ localTrack, remoteUsers }: VideoCallProps) {
             {/* Local Video (PIP) */}
             <div
                 ref={localRef}
-                className="absolute bottom-6 right-6 w-32 md:w-48 aspect-video bg-slate-800 rounded-2xl border-2 border-white/10 shadow-2xl overflow-hidden z-10"
+                className="absolute bottom-6 right-6 w-32 md:w-48 aspect-video bg-slate-800 rounded-2xl border-2 border-white/10 shadow-2xl overflow-hidden z-10 scale-x-[-1]"
             />
         </div>
     );

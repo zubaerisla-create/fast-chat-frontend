@@ -30,15 +30,15 @@ export default function CallModal() {
                     <div className="flex items-center gap-6 w-full">
                         <button
                             onClick={rejectCall}
-                            className="flex-1 h-14 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all group"
+                            className="flex-1 h-14 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all group border border-red-500/10"
                         >
-                            <PhoneOff size={24} className="group-hover:rotate-12 transition-transform" />
+                            <PhoneOff size={24} className="group-hover:rotate-12 group-active:scale-90 transition-all" />
                         </button>
                         <button
                             onClick={acceptCall}
-                            className="flex-1 h-14 rounded-2xl bg-[#7C6EFF] hover:bg-[#6A5EE0] text-white flex items-center justify-center shadow-lg shadow-[#7C6EFF]/40 transition-all group"
+                            className="flex-1 h-14 rounded-2xl bg-[#7C6EFF] hover:bg-[#6A5EE0] text-white flex items-center justify-center shadow-lg shadow-[#7C6EFF]/40 transition-all group active:scale-[0.98]"
                         >
-                            <Phone size={24} className="group-hover:-rotate-12 transition-transform" />
+                            <Phone size={24} className="group-hover:-rotate-12 group-active:scale-90 transition-all" />
                         </button>
                     </div>
                 </div>

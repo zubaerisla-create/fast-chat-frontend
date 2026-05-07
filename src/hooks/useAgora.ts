@@ -135,9 +135,11 @@ export const useAgora = () => {
             const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
 
             try {
+                console.log(`[Agora] Creating and publishing ${type} tracks...`);
                 if (type === 'video') {
                     const [audio, video] = await AgoraRTC.createMicrophoneAndCameraTracks();
                     if (currentToken !== sessionToken.current) {
+                        console.warn('[Agora] Publish cancelled: Session changed');
                         audio.close(); video.close(); return;
                     }
                     setLocalAudioTrack(audio);
@@ -146,13 +148,14 @@ export const useAgora = () => {
                 } else {
                     const audio = await AgoraRTC.createMicrophoneAudioTrack();
                     if (currentToken !== sessionToken.current) {
+                        console.warn('[Agora] Publish cancelled: Session changed');
                         audio.close(); return;
                     }
                     await audio.setEnabled(true);
                     setLocalAudioTrack(audio);
                     await activeClient.publish([audio]);
                 }
-                console.log('[Agora] Local tracks published');
+                console.log('[Agora] Local tracks published successfully');
             } catch (err) {
                 console.error('[Agora] Publish error:', err);
                 throw err;

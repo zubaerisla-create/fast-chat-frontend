@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
-import { useAgora } from '@/hooks/useAgora';
+import { useAgoraContext } from './AgoraContext';
 import { getAgoraToken, initiateCall, endCall } from '@/lib/api';
 import { User, CallData } from '@/types';
 import toast from 'react-hot-toast';
@@ -32,7 +32,7 @@ const CallContext = createContext<CallContextType | null>(null);
 export function CallProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const { socket } = useSocket();
-    const agora = useAgora();
+    const agora = useAgoraContext();
 
     const [callStatus, setCallStatus] = useState<CallStatus>('idle');
     const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
@@ -77,36 +77,43 @@ export function CallProvider({ children }: { children: ReactNode }) {
         };
 
         const handleAccepted = async (data: { channelName: string }) => {
-            console.log('[CallContext] Call accepted signal received:', data.channelName);
+            console.log('[Socket] Call accepted signal received:', data.channelName);
 
             // Check if this signal matches our current 'calling' session
             if (callStatus === 'calling' && activeChannelRef.current === data.channelName && !isProcessing.current) {
                 isProcessing.current = true;
                 try {
-                    console.log('[CallContext] Fetching token for caller...');
+                    console.log('[Call] Fetching token for caller...');
                     const res = await getAgoraToken(data.channelName, 0);
 
                     // Final check before joining
                     if (activeChannelRef.current !== data.channelName) {
-                        console.warn('[CallContext] Call was cancelled before token was fetched');
+                        console.warn('[Call] Session already invalidated, aborting join');
                         return;
                     }
 
                     const appId = res.data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
-                    console.log('[CallContext] Caller joining channel:', data.channelName);
+                    console.log('[Agora] Caller joining channel:', data.channelName);
 
                     await agora.joinChannel(appId, data.channelName, res.data.token, 0);
                     await agora.publishTracks(isAudioOnly ? 'audio' : 'video');
 
-                    console.log('[CallContext] Caller fully connected');
+                    console.log('[Call] Caller fully connected');
                     setCallStatus('connected');
                 } catch (err) {
-                    console.error('[CallContext] Caller connection failed:', err);
+                    console.error('[Call] Caller connection failed:', err);
                     toast.error('Failed to connect call');
                     await cleanup();
                 } finally {
                     isProcessing.current = false;
                 }
+            } else {
+                console.warn('[Call] Ignoring call_accepted: State mismatch or already processing', {
+                    callStatus,
+                    activeChannel: activeChannelRef.current,
+                    incomingChannel: data.channelName,
+                    isProcessing: isProcessing.current
+                });
             }
         };
 
@@ -205,12 +212,26 @@ export function CallProvider({ children }: { children: ReactNode }) {
     };
 
     const leaveCall = async () => {
+        console.log('[Call] Initiating leaveCall');
         if (activeCall && socket) {
-            const receiverId = activeCall.receiverId === user?._id ? activeCall.callerId._id : activeCall.receiverId;
-            socket.emit('call_ended', { channelName: activeCall.channelName, receiverId });
-            await endCall(activeCall.channelName, user?._id || '');
+            // Identify the remote user ID to notify them
+            const remoteUserId = activeCall.callerId._id === user?._id
+                ? activeCall.receiverId
+                : activeCall.callerId._id;
+
+            console.log('[Socket] Emitting call_ended to:', remoteUserId);
+            socket.emit('call_ended', {
+                channelName: activeCall.channelName,
+                receiverId: remoteUserId
+            });
+
+            try {
+                await endCall(activeCall.channelName, user?._id || '');
+            } catch (err) {
+                console.error('[Call] Error calling endCall API:', err);
+            }
         }
-        cleanup();
+        await cleanup();
     };
 
     const toggleMute = () => {
