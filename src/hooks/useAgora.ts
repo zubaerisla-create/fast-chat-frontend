@@ -6,68 +6,71 @@ import type {
     IMicrophoneAudioTrack,
 } from 'agora-rtc-sdk-ng';
 
+type ConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'DISCONNECTING';
+
 export const useAgora = () => {
-    const [client, setClient] = useState<IAgoraRTCClient | null>(null);
     const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
     const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
     const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
 
     const clientRef = useRef<IAgoraRTCClient | null>(null);
+    const connectionState = useRef<ConnectionState>('DISCONNECTED');
 
     useEffect(() => {
-        let activeClient: IAgoraRTCClient | null = null;
         const init = async () => {
+            if (clientRef.current) return;
             const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
-            activeClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
-            setClient(activeClient);
-            clientRef.current = activeClient;
-            console.log('[Agora] Client created');
+            const c = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+            clientRef.current = c;
+            console.log('[Agora] Client singleton created');
         };
 
         init();
 
         return () => {
-            if (activeClient) {
-                console.log('[Agora] Cleaning up client');
-                activeClient.leave();
+            if (clientRef.current) {
+                console.log('[Agora] Component unmounting, cleaning up...');
+                clientRef.current.leave();
+                clientRef.current = null;
+                connectionState.current = 'DISCONNECTED';
             }
         };
     }, []);
 
     const joinChannel = useCallback(
         async (appId: string, channelName: string, token: string, uid: number) => {
-            const activeClient = clientRef.current;
-            if (!activeClient) {
-                console.error('[Agora] Cannot join, client not initialized');
+            if (!clientRef.current || connectionState.current !== 'DISCONNECTED') {
+                console.warn(`[Agora] Join skipped. State: ${connectionState.current}`);
                 return;
             }
 
-            console.log(`[Agora] Attempting to join: Channel=${channelName}, UID=${uid}, Token=${token.substring(0, 10)}...`);
+            connectionState.current = 'CONNECTING';
+            const activeClient = clientRef.current;
+
+            console.log(`[Agora] Joining channel: ${channelName}`);
 
             activeClient.on('user-published', async (user, mediaType) => {
                 console.log(`[Agora] User published: ${user.uid}, type=${mediaType}`);
                 try {
                     await activeClient.subscribe(user, mediaType);
-                    console.log(`[Agora] Subscribed to: ${user.uid}, type=${mediaType}`);
+                    console.log(`[Agora] Subscribed to ${user.uid} (${mediaType})`);
 
                     if (mediaType === 'video') {
                         setRemoteUsers((prev) => {
                             if (prev.find((u) => u.uid === user.uid)) return prev;
                             return [...prev, user];
                         });
-                        // Note: video play is usually handled in the UI component
                     }
                     if (mediaType === 'audio') {
                         user.audioTrack?.play();
-                        console.log(`[Agora] Playing audio for: ${user.uid}`);
                     }
                 } catch (err) {
-                    console.error(`[Agora] Subscribe failed for ${user.uid}:`, err);
+                    console.error('[Agora] Subscribe failed:', err);
                 }
             });
 
             activeClient.on('user-unpublished', (user, mediaType) => {
-                console.log(`[Agora] User unpublished: ${user.uid}, type=${mediaType}`);
+                console.log(`[Agora] User unpublished: ${user.uid} (${mediaType})`);
                 if (mediaType === 'video') {
                     setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
                 }
@@ -80,8 +83,10 @@ export const useAgora = () => {
 
             try {
                 await activeClient.join(appId, channelName, token, uid);
+                connectionState.current = 'CONNECTED';
                 console.log('[Agora] Join success');
             } catch (err) {
+                connectionState.current = 'DISCONNECTED';
                 console.error('[Agora] Join failed:', err);
                 throw err;
             }
@@ -92,9 +97,12 @@ export const useAgora = () => {
     const publishTracks = useCallback(
         async (type: 'audio' | 'video') => {
             const activeClient = clientRef.current;
-            if (!activeClient) return;
+            if (!activeClient || connectionState.current !== 'CONNECTED') {
+                console.warn('[Agora] Cannot publish: not connected');
+                return;
+            }
 
-            console.log(`[Agora] Creating tracks for: ${type}`);
+            console.log(`[Agora] Publishing tracks: ${type}`);
             const { default: AgoraRTC } = await import('agora-rtc-sdk-ng');
 
             try {
@@ -103,13 +111,12 @@ export const useAgora = () => {
                     setLocalAudioTrack(audio);
                     setLocalVideoTrack(video);
                     await activeClient.publish([audio, video]);
-                    console.log('[Agora] Published Audio & Video tracks');
                 } else {
                     const audio = await AgoraRTC.createMicrophoneAudioTrack();
                     setLocalAudioTrack(audio);
                     await activeClient.publish([audio]);
-                    console.log('[Agora] Published Audio track');
                 }
+                console.log('[Agora] Tracks published successfully');
             } catch (err) {
                 console.error('[Agora] Publish failed:', err);
                 throw err;
@@ -119,22 +126,34 @@ export const useAgora = () => {
     );
 
     const leaveChannel = useCallback(async () => {
-        console.log('[Agora] Leaving channel');
+        if (!clientRef.current || connectionState.current === 'DISCONNECTED') return;
+
+        console.log('[Agora] Leaving channel...');
+        connectionState.current = 'DISCONNECTING';
+
         localAudioTrack?.stop();
         localAudioTrack?.close();
         localVideoTrack?.stop();
         localVideoTrack?.close();
+
         setLocalAudioTrack(null);
         setLocalVideoTrack(null);
         setRemoteUsers([]);
-        if (clientRef.current) {
+
+        try {
             await clientRef.current.leave();
+            console.log('[Agora] Left channel successfully');
+        } catch (err) {
+            console.error('[Agora] Error during leave:', err);
+        } finally {
+            connectionState.current = 'DISCONNECTED';
+            // Cleanup listeners
+            clientRef.current?.removeAllListeners();
         }
     }, [localAudioTrack, localVideoTrack]);
 
     const toggleMute = useCallback(
         async (isMuted: boolean) => {
-            console.log(`[Agora] Mute toggled: ${isMuted}`);
             await localAudioTrack?.setEnabled(!isMuted);
         },
         [localAudioTrack]
@@ -142,7 +161,6 @@ export const useAgora = () => {
 
     const toggleVideo = useCallback(
         async (isOff: boolean) => {
-            console.log(`[Agora] Video toggled: ${isOff}`);
             await localVideoTrack?.setEnabled(!isOff);
         },
         [localVideoTrack]
@@ -157,5 +175,6 @@ export const useAgora = () => {
         leaveChannel,
         toggleMute,
         toggleVideo,
+        isConnected: connectionState.current === 'CONNECTED',
     };
 };

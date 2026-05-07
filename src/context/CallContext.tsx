@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
 import { useAgora } from '@/hooks/useAgora';
@@ -40,29 +40,36 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const [isAudioOnly, setIsAudioOnly] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
+    const isProcessing = useRef(false);
 
     const cleanup = useCallback(async () => {
-        await agora.leaveChannel();
-        setCallStatus('idle');
-        setIncomingCall(null);
-        setActiveCall(null);
-        setIsMuted(false);
-        setIsVideoOff(false);
+        isProcessing.current = true;
+        try {
+            await agora.leaveChannel();
+            setCallStatus('idle');
+            setIncomingCall(null);
+            setActiveCall(null);
+            setIsMuted(false);
+            setIsVideoOff(false);
+        } finally {
+            isProcessing.current = false;
+        }
     }, [agora]);
 
     // Handle Socket events
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('incoming_call', (data: CallData) => {
+        const handleIncoming = (data: CallData) => {
             console.log('[CallContext] Incoming call:', data.channelName, data.callType);
             setIncomingCall(data);
             setCallStatus('ringing');
-        });
+        };
 
-        socket.on('call_accepted', async (data: { channelName: string }) => {
+        const handleAccepted = async (data: { channelName: string }) => {
             console.log('[CallContext] Call accepted by remote:', data.channelName);
-            if (callStatus === 'calling') {
+            if (callStatus === 'calling' && !isProcessing.current) {
+                isProcessing.current = true;
                 try {
                     console.log('[CallContext] Fetching token for caller...');
                     const res = await getAgoraToken(data.channelName, 0);
@@ -73,34 +80,41 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 } catch (err) {
                     console.error('[CallContext] Caller failed to join accepted call:', err);
                     toast.error('Failed to join call');
-                    cleanup();
+                    await cleanup();
+                } finally {
+                    isProcessing.current = false;
                 }
             }
-        });
+        };
 
-        socket.on('call_rejected', () => {
+        const handleRejected = () => {
             console.log('[CallContext] Call rejected by remote');
             if (callStatus === 'calling') {
                 toast.error('Call rejected');
                 cleanup();
             }
-        });
+        };
 
-        socket.on('call_ended', () => {
+        const handleEnded = () => {
             console.log('[CallContext] Call ended by remote');
             cleanup();
-        });
+        };
+
+        socket.on('incoming_call', handleIncoming);
+        socket.on('call_accepted', handleAccepted);
+        socket.on('call_rejected', handleRejected);
+        socket.on('call_ended', handleEnded);
 
         return () => {
-            socket.off('incoming_call');
-            socket.off('call_accepted');
-            socket.off('call_rejected');
-            socket.off('call_ended');
+            socket.off('incoming_call', handleIncoming);
+            socket.off('call_accepted', handleAccepted);
+            socket.off('call_rejected', handleRejected);
+            socket.off('call_ended', handleEnded);
         };
     }, [socket, callStatus, isAudioOnly, agora, cleanup]);
 
     const startCall = async (receiverId: string, type: 'audio' | 'video') => {
-        if (!user) return;
+        if (!user || isProcessing.current) return;
         const channelName = `call_${user._id}_${Date.now()}`;
         console.log('[CallContext] Starting call:', channelName, type);
         setIsAudioOnly(type === 'audio');
@@ -129,9 +143,10 @@ export function CallProvider({ children }: { children: ReactNode }) {
     };
 
     const acceptCall = async () => {
-        if (!incomingCall || !socket) return;
+        if (!incomingCall || !socket || isProcessing.current) return;
         console.log('[CallContext] Accepting call:', incomingCall.channelName);
 
+        isProcessing.current = true;
         try {
             const { channelName, callType } = incomingCall;
             setIsAudioOnly(callType === 'audio');
@@ -150,12 +165,14 @@ export function CallProvider({ children }: { children: ReactNode }) {
         } catch (err) {
             console.error('[CallContext] Failed to accept call:', err);
             toast.error('Failed to accept call');
-            cleanup();
+            await cleanup();
+        } finally {
+            isProcessing.current = false;
         }
     };
 
     const rejectCall = () => {
-        if (!incomingCall || !socket) return;
+        if (!incomingCall || !socket || isProcessing.current) return;
         socket.emit('call_rejected', { callerId: incomingCall.callerId._id });
         cleanup();
     };
