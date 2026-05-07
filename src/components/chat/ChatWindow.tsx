@@ -31,8 +31,8 @@ function DateDivider({ date }: { date: string }) {
 
 export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const { user } = useAuth();
-  const { onlineUsers } = useSocket();
-  const { startCall } = useCall();
+  const { socket, onlineUsers } = useSocket();
+  const { startOutgoingCall } = useCall();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -143,14 +143,22 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
 
         <div className="flex items-center gap-2 ml-auto">
           <button
-            onClick={() => other && startCall(other, 'audio')}
+            onClick={() => {
+              if (!other || !socket) return;
+              startOutgoingCall({ receiverId: other._id, callType: 'audio' });
+              socket.emit('initiate_call', { receiverId: other._id, callType: 'audio' });
+            }}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
             title="Audio Call"
           >
             <Phone size={18} />
           </button>
           <button
-            onClick={() => other && startCall(other, 'video')}
+            onClick={() => {
+              if (!other || !socket) return;
+              startOutgoingCall({ receiverId: other._id, callType: 'video' });
+              socket.emit('initiate_call', { receiverId: other._id, callType: 'video' });
+            }}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
             title="Video Call"
           >

@@ -1,5 +1,4 @@
 'use client';
-import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { SocketProvider } from '@/context/SocketContext';
@@ -8,6 +7,7 @@ import { AgoraProvider } from '@/context/AgoraContext';
 import { Toaster } from 'react-hot-toast';
 import CallModal from '@/components/chat/CallModal';
 import CallScreen from '@/components/chat/CallScreen';
+import CallSocketWiring from '@/components/chat/CallSocketWiring';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SocketProvider>
             <AgoraProvider>
               <CallProvider>
+                {/* Wire up all socket call events globally */}
+                <CallSocketWiring />
                 {children}
                 <CallModal />
                 <CallScreen />
@@ -32,7 +34,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               color: '#fff',
               border: '1px solid rgba(124,110,255,0.3)',
               borderRadius: '12px',
-              fontFamily: 'var(--font-body)',
             },
           }}
         />
