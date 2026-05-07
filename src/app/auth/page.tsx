@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginUser, registerUser } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -11,6 +12,7 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,8 +59,8 @@ export default function AuthPage() {
                 key={m}
                 onClick={() => setMode(m)}
                 className={`flex-1 py-2 rounded-lg text-sm font-sans font-medium transition-all duration-200 ${mode === m
-                    ? 'bg-[#7C6EFF] text-white shadow-lg shadow-[#7C6EFF]/20'
-                    : 'text-white/40 hover:text-white/70'
+                  ? 'bg-[#7C6EFF] text-white shadow-lg shadow-[#7C6EFF]/20'
+                  : 'text-white/40 hover:text-white/70'
                   }`}
               >
                 {m === 'login' ? 'Sign In' : 'Sign Up'}
@@ -101,14 +103,23 @@ export default function AuthPage() {
               <label className="block text-xs text-white/40 mb-1.5 font-sans uppercase tracking-wider">
                 Password
               </label>
-              <input
-                type="password"
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm font-sans outline-none input-glow transition-all focus:border-[#7C6EFF]/50"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-11 text-white placeholder-white/20 text-sm font-sans outline-none input-glow transition-all focus:border-[#7C6EFF]/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/40 transition-colors p-1"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button
