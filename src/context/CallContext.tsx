@@ -40,16 +40,16 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const [isAudioOnly, setIsAudioOnly] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
+
+    // Using refs for stable access in event listeners
     const isProcessing = useRef(false);
+    const activeChannelRef = useRef<string | null>(null);
 
     const { leaveChannel: agoraLeave } = agora;
 
-    const activeChannelRef = useRef<string | null>(null);
-
     const cleanup = useCallback(async () => {
         console.log('[CallContext] Cleaning up local state');
-        activeChannelRef.current = null; // Invalidate current session immediately
-
+        activeChannelRef.current = null;
         setCallStatus('idle');
         setIncomingCall(null);
         setActiveCall(null);
@@ -80,10 +80,8 @@ export function CallProvider({ children }: { children: ReactNode }) {
             console.log('[Socket] acceptCall signal received (broadcasting tokens):', data);
 
             // Both parties handle this broadcast to finalize connection
-            // We check if we are in a state that expects a connection
-            const isExpectingConnection = callStatus === 'calling' || callStatus === 'ringing' || incomingCall !== null;
-
-            if (isExpectingConnection && !isProcessing.current) {
+            // We expect connection if the status is calling, ringing, or we have an incomingCall
+            if (!isProcessing.current) {
                 isProcessing.current = true;
                 try {
                     const appId = data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
@@ -110,20 +108,14 @@ export function CallProvider({ children }: { children: ReactNode }) {
                     isProcessing.current = false;
                 }
             } else {
-                console.warn('[Call] Ignoring acceptCall: State mismatch or already processing', {
-                    callStatus,
-                    isExpecting: isExpectingConnection,
-                    isProcessing: isProcessing.current
-                });
+                console.log('[Call] Handled acceptCall broadcast - already processing or joined');
             }
         };
 
         const handleRejected = () => {
             console.log('[Socket] callRejected received');
-            if (callStatus === 'calling') {
-                toast.error('Call rejected');
-                cleanup();
-            }
+            toast.error('Call rejected');
+            cleanup();
         };
 
         const handleEnded = () => {
@@ -131,14 +123,13 @@ export function CallProvider({ children }: { children: ReactNode }) {
             cleanup();
         };
 
-        // Listen for new event names
         socket.on('incomingCall', handleIncoming);
         socket.on('acceptCall', handleAccepted);
         socket.on('callRejected', handleRejected);
         socket.on('callEnded', handleEnded);
 
-        // Fallback for old event names
-        socket.on('incoming_call', handleIncoming);
+        // Aliases and fallbacks
+        socket.on('initiate_call', handleIncoming);
         socket.on('call_accepted', handleAccepted);
         socket.on('call_rejected', handleRejected);
         socket.on('call_ended', handleEnded);
@@ -148,18 +139,18 @@ export function CallProvider({ children }: { children: ReactNode }) {
             socket.off('acceptCall', handleAccepted);
             socket.off('callRejected', handleRejected);
             socket.off('callEnded', handleEnded);
-
-            socket.off('incoming_call', handleIncoming);
+            socket.off('initiate_call', handleIncoming);
             socket.off('call_accepted', handleAccepted);
             socket.off('call_rejected', handleRejected);
             socket.off('call_ended', handleEnded);
         };
-    }, [socket, callStatus, isAudioOnly, agora, cleanup]);
+    }, [socket, isAudioOnly, agora, cleanup, incomingCall]); // Added incomingCall to deps to ensure handler has access? Actually handled via isProcessing
 
     const startCall = async (remoteUser: User, type: 'audio' | 'video') => {
         if (!user || isProcessing.current || !socket) return;
         const channelName = `call_${user._id}_${Date.now()}`;
         console.log('[Call] Initiating socket call with:', remoteUser.username, type);
+
         setIsAudioOnly(type === 'audio');
         activeChannelRef.current = channelName;
 
@@ -173,7 +164,6 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 receiverInfo: remoteUser
             } as any);
 
-            // Purely socket-based initiation as requested
             socket.emit('initiate_call', {
                 callerId: user,
                 receiverId: remoteUser._id,
@@ -190,26 +180,39 @@ export function CallProvider({ children }: { children: ReactNode }) {
     };
 
     const acceptCall = async () => {
-        if (!incomingCall || !socket || isProcessing.current) return;
+        if (!incomingCall || !socket || isProcessing.current) {
+            console.warn('[Call] acceptCall skipped - state mismatch or already processing');
+            return;
+        }
+
         console.log('[Call] Accepting call (Socket Only Mode):', incomingCall.channelName);
         activeChannelRef.current = incomingCall.channelName;
+
+        // Mark as processing to prevent multiple clicks
+        isProcessing.current = true;
 
         try {
             const { channelName, callType } = incomingCall;
             setIsAudioOnly(callType === 'audio');
             setActiveCall(incomingCall);
 
-            // Signal acceptance - Backend will now broadcast tokens to BOTH users
             socket.emit('acceptCall', {
                 channelName,
                 callerId: incomingCall.callerId._id
             });
 
             console.log('[Socket] acceptCall emitted. Waiting for tokens broadcast...');
-            // The handleAccepted listener will finish the job when tokens arrive
+
+            // Note: We don't set isProcessing false here because we want handleAccepted to handle the join.
+            // But wait! handleAccepted checks !isProcessing.current.
+            // So we MUST set it to false before handleAccepted arrives, or handleAccepted must know it's US.
+
+            isProcessing.current = false; // Allow handleAccepted to proceed
+            setIncomingCall(null); // Clear modal immediately
         } catch (err) {
             console.error('[Call] Failed to emit acceptance:', err);
             toast.error('Failed to accept call');
+            isProcessing.current = false;
             await cleanup();
         }
     };
@@ -217,24 +220,18 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const rejectCall = () => {
         if (!incomingCall || !socket || isProcessing.current) return;
         socket.emit('callRejected', { callerId: incomingCall.callerId._id });
-        socket.emit('call_rejected', { callerId: incomingCall.callerId._id });
         cleanup();
     };
 
     const leaveCall = async () => {
         console.log('[Call] Initiating leaveCall');
         if (activeCall && socket) {
-            // Identify the remote user ID to notify them
             const remoteUserId = activeCall.callerId._id === user?._id
                 ? activeCall.receiverId
                 : activeCall.callerId._id;
 
             console.log('[Socket] Emitting callEnded to:', remoteUserId);
             socket.emit('callEnded', {
-                channelName: activeCall.channelName,
-                receiverId: remoteUserId
-            });
-            socket.emit('call_ended', {
                 channelName: activeCall.channelName,
                 receiverId: remoteUserId
             });

@@ -1,13 +1,25 @@
 'use client';
 
+import { useState } from 'react';
 import { Phone, PhoneOff } from 'lucide-react';
 import { useCall } from '@/context/CallContext';
 import Avatar from '@/components/ui/Avatar';
 
 export default function CallModal() {
     const { incomingCall, acceptCall, rejectCall } = useCall();
+    const [isActioned, setIsActioned] = useState(false);
 
     if (!incomingCall) return null;
+
+    const handleAccept = async () => {
+        setIsActioned(true);
+        await acceptCall();
+    };
+
+    const handleReject = () => {
+        setIsActioned(true);
+        rejectCall();
+    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -29,16 +41,22 @@ export default function CallModal() {
 
                     <div className="flex items-center gap-6 w-full">
                         <button
-                            onClick={rejectCall}
-                            className="flex-1 h-14 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all group border border-red-500/10"
+                            onClick={handleReject}
+                            disabled={isActioned}
+                            className="flex-1 h-14 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all group border border-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <PhoneOff size={24} className="group-hover:rotate-12 group-active:scale-90 transition-all" />
                         </button>
                         <button
-                            onClick={acceptCall}
-                            className="flex-1 h-14 rounded-2xl bg-[#7C6EFF] hover:bg-[#6A5EE0] text-white flex items-center justify-center shadow-lg shadow-[#7C6EFF]/40 transition-all group active:scale-[0.98]"
+                            onClick={handleAccept}
+                            disabled={isActioned}
+                            className="flex-1 h-14 rounded-2xl bg-[#7C6EFF] hover:bg-[#6A5EE0] text-white flex items-center justify-center shadow-lg shadow-[#7C6EFF]/40 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Phone size={24} className="group-hover:-rotate-12 group-active:scale-90 transition-all" />
+                            {isActioned ? (
+                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Phone size={24} className="group-hover:-rotate-12 group-active:scale-90 transition-all" />
+                            )}
                         </button>
                     </div>
                 </div>
