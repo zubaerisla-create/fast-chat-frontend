@@ -143,14 +143,14 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
 
         <div className="flex items-center gap-2 ml-auto">
           <button
-            onClick={() => other && startCall(other._id, 'audio')}
+            onClick={() => other && startCall(other, 'audio')}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
             title="Audio Call"
           >
             <Phone size={18} />
           </button>
           <button
-            onClick={() => other && startCall(other._id, 'video')}
+            onClick={() => other && startCall(other, 'video')}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
             title="Video Call"
           >

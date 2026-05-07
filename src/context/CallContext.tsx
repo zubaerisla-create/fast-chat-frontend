@@ -13,11 +13,11 @@ type CallStatus = 'idle' | 'ringing' | 'calling' | 'connected' | 'ended';
 interface CallContextType {
     callStatus: CallStatus;
     incomingCall: CallData | null;
-    activeCall: CallData | null;
+    activeCall: (CallData & { receiverInfo?: User }) | null;
     isAudioOnly: boolean;
     localVideoTrack: any;
     remoteUsers: any[];
-    startCall: (receiverId: string, type: 'audio' | 'video') => Promise<void>;
+    startCall: (remoteUser: User, type: 'audio' | 'video') => Promise<void>;
     acceptCall: () => Promise<void>;
     rejectCall: () => void;
     leaveCall: () => Promise<void>;
@@ -43,14 +43,20 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const isProcessing = useRef(false);
 
     const cleanup = useCallback(async () => {
+        console.log('[CallContext] Cleaning up local state');
+        // Reset state immediately for responsive UI
+        setCallStatus('idle');
+        setIncomingCall(null);
+        setActiveCall(null);
+        setIsMuted(false);
+        setIsVideoOff(false);
+
+        // Then do the heavy lifting of leaving the channel
         isProcessing.current = true;
         try {
             await agora.leaveChannel();
-            setCallStatus('idle');
-            setIncomingCall(null);
-            setActiveCall(null);
-            setIsMuted(false);
-            setIsVideoOff(false);
+        } catch (err) {
+            console.error('[CallContext] Error during agora cleanup:', err);
         } finally {
             isProcessing.current = false;
         }
@@ -73,13 +79,15 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 try {
                     console.log('[CallContext] Fetching token for caller...');
                     const res = await getAgoraToken(data.channelName, 0);
-                    console.log('[CallContext] Caller joining channel...');
-                    await agora.joinChannel(res.data.appId, data.channelName, res.data.token, 0);
+                    const appId = res.data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
+                    console.log('[CallContext] Caller joining channel with appId:', appId);
+                    await agora.joinChannel(appId, data.channelName, res.data.token, 0);
                     await agora.publishTracks(isAudioOnly ? 'audio' : 'video');
+                    console.log('[CallContext] Caller connected and published');
                     setCallStatus('connected');
                 } catch (err) {
                     console.error('[CallContext] Caller failed to join accepted call:', err);
-                    toast.error('Failed to join call');
+                    toast.error('Failed to connect call');
                     await cleanup();
                 } finally {
                     isProcessing.current = false;
@@ -113,24 +121,25 @@ export function CallProvider({ children }: { children: ReactNode }) {
         };
     }, [socket, callStatus, isAudioOnly, agora, cleanup]);
 
-    const startCall = async (receiverId: string, type: 'audio' | 'video') => {
+    const startCall = async (remoteUser: User, type: 'audio' | 'video') => {
         if (!user || isProcessing.current) return;
         const channelName = `call_${user._id}_${Date.now()}`;
-        console.log('[CallContext] Starting call:', channelName, type);
+        console.log('[CallContext] Initiating call with:', remoteUser.username, type);
         setIsAudioOnly(type === 'audio');
 
         try {
             setCallStatus('calling');
             setActiveCall({
                 callerId: user,
-                receiverId,
+                receiverId: remoteUser._id,
                 channelName,
                 callType: type,
-            });
+                receiverInfo: remoteUser // Added for UI
+            } as any);
 
             await initiateCall({
                 callerId: user._id,
-                receiverId,
+                receiverId: remoteUser._id,
                 channelName,
                 callType: type,
             });
@@ -154,17 +163,18 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
             console.log('[CallContext] Fetching token for receiver...');
             const res = await getAgoraToken(channelName, 0);
-            console.log('[CallContext] Receiver joining channel...');
-            await agora.joinChannel(res.data.appId, channelName, res.data.token, 0);
+            const appId = res.data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
+            console.log('[CallContext] Receiver joining channel with appId:', appId);
+            await agora.joinChannel(appId, channelName, res.data.token, 0);
             await agora.publishTracks(callType);
 
             socket.emit('call_accepted', { channelName, callerId: incomingCall.callerId._id });
-            console.log('[CallContext] Emitted call_accepted');
+            console.log('[CallContext] Receiver connected and published');
             setCallStatus('connected');
             setIncomingCall(null);
         } catch (err) {
             console.error('[CallContext] Failed to accept call:', err);
-            toast.error('Failed to accept call');
+            toast.error('Failed to connect call');
             await cleanup();
         } finally {
             isProcessing.current = false;
