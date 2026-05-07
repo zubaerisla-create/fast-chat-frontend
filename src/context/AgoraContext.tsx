@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useRef, useCallback, ReactNode } from 'react';
-import AgoraRTC from 'agora-rtc-sdk-ng';
 
 interface AgoraContextType {
     localAudioTrack: any;
@@ -17,8 +16,24 @@ interface AgoraContextType {
 
 const AgoraContext = createContext<AgoraContextType | null>(null);
 
-// Singleton Agora client
-const agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+// Lazy singleton factory — only created in browser context to avoid SSR crash
+let _client: any = null;
+function getClient() {
+    if (typeof window === 'undefined') return null;
+    if (!_client) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const AgoraRTC = require('agora-rtc-sdk-ng');
+        _client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+    }
+    return _client;
+}
+
+// Lazy AgoraRTC accessor (browser-only)
+function getAgoraRTC() {
+    if (typeof window === 'undefined') return null;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('agora-rtc-sdk-ng');
+}
 
 export function AgoraProvider({ children }: { children: ReactNode }) {
     const [localAudioTrack, setLocalAudioTrack] = useState<any>(null);
@@ -30,11 +45,12 @@ export function AgoraProvider({ children }: { children: ReactNode }) {
     const listenersSetup = useRef(false);
 
     const setupListeners = useCallback(() => {
-        if (listenersSetup.current) return;
+        const client = getClient();
+        if (!client || listenersSetup.current) return;
         listenersSetup.current = true;
 
-        agoraClient.on('user-published', async (user, mediaType) => {
-            await agoraClient.subscribe(user, mediaType);
+        client.on('user-published', async (user: any, mediaType: any) => {
+            await client.subscribe(user, mediaType);
             console.log(`[Agora] Subscribed to ${user.uid}'s ${mediaType}`);
             if (mediaType === 'audio' && user.audioTrack) {
                 user.audioTrack.play();
@@ -45,21 +61,25 @@ export function AgoraProvider({ children }: { children: ReactNode }) {
             });
         });
 
-        agoraClient.on('user-unpublished', (user) => {
+        client.on('user-unpublished', (user: any) => {
             setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
         });
 
-        agoraClient.on('user-left', (user) => {
+        client.on('user-left', (user: any) => {
             console.log(`[Agora] Remote user ${user.uid} left`);
             setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
         });
     }, []);
 
     const joinChannel = useCallback(async (appId: string, channelName: string, token: string, uid: number, callType: string) => {
+        const client = getClient();
+        const AgoraRTC = getAgoraRTC();
+        if (!client || !AgoraRTC) throw new Error('Agora not available (SSR?)');
+
         try {
             setupListeners();
             console.log(`[Agora] Joining channel: ${channelName}, UID: ${uid}, callType: ${callType}`);
-            await agoraClient.join(appId, channelName, token, uid);
+            await client.join(appId, channelName, token, uid);
             console.log('[Agora] Joined successfully');
 
             const audio = await AgoraRTC.createMicrophoneAudioTrack();
@@ -70,9 +90,9 @@ export function AgoraProvider({ children }: { children: ReactNode }) {
                 const video = await AgoraRTC.createCameraVideoTrack();
                 setLocalVideoTrack(video);
                 tracksRef.current.push(video);
-                await agoraClient.publish([audio, video]);
+                await client.publish([audio, video]);
             } else {
-                await agoraClient.publish([audio]);
+                await client.publish([audio]);
             }
             console.log(`[Agora] Published tracks for ${callType} call`);
         } catch (err) {
@@ -82,7 +102,8 @@ export function AgoraProvider({ children }: { children: ReactNode }) {
     }, [setupListeners]);
 
     const leaveChannel = useCallback(async () => {
-        if (agoraClient.connectionState === 'DISCONNECTED') {
+        const client = getClient();
+        if (!client || client.connectionState === 'DISCONNECTED') {
             console.log('[Agora] Already disconnected, skip leave');
             listenersSetup.current = false;
             return;
@@ -95,7 +116,7 @@ export function AgoraProvider({ children }: { children: ReactNode }) {
         setIsMuted(false);
         setIsCameraOff(false);
         try {
-            await agoraClient.leave();
+            await client.leave();
             listenersSetup.current = false;
             console.log('[Agora] Left channel');
         } catch (err) {
@@ -105,16 +126,14 @@ export function AgoraProvider({ children }: { children: ReactNode }) {
 
     const toggleMute = useCallback(async () => {
         if (localAudioTrack) {
-            const newEnabled = isMuted; // if currently muted, enable it (true = enabled)
-            await localAudioTrack.setEnabled(newEnabled);
+            await localAudioTrack.setEnabled(isMuted); // isMuted=true → enable (unmute)
             setIsMuted((prev) => !prev);
         }
     }, [localAudioTrack, isMuted]);
 
     const toggleCamera = useCallback(async () => {
         if (localVideoTrack) {
-            const newEnabled = isCameraOff; // if currently camera off, enable it 
-            await localVideoTrack.setEnabled(newEnabled);
+            await localVideoTrack.setEnabled(isCameraOff); // isCameraOff=true → enable camera
             setIsCameraOff((prev) => !prev);
         }
     }, [localVideoTrack, isCameraOff]);
