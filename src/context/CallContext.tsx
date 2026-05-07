@@ -71,54 +71,55 @@ export function CallProvider({ children }: { children: ReactNode }) {
         if (!socket) return;
 
         const handleIncoming = (data: CallData) => {
-            console.log('[CallContext] Incoming call:', data.channelName, data.callType);
+            console.log('[Socket] incomingCall received:', data.channelName);
             setIncomingCall(data);
             setCallStatus('ringing');
         };
 
-        const handleAccepted = async (data: { channelName: string }) => {
-            console.log('[Socket] Call accepted signal received:', data.channelName);
+        const handleAccepted = async (data: { channelName: string; token?: string; appId?: string; uid?: number }) => {
+            console.log('[Socket] acceptCall signal received (broadcasting tokens):', data);
 
-            // Check if this signal matches our current 'calling' session
-            if (callStatus === 'calling' && activeChannelRef.current === data.channelName && !isProcessing.current) {
+            // Both parties handle this broadcast to finalize connection
+            // We check if we are in a state that expects a connection
+            const isExpectingConnection = callStatus === 'calling' || callStatus === 'ringing' || incomingCall !== null;
+
+            if (isExpectingConnection && !isProcessing.current) {
                 isProcessing.current = true;
                 try {
-                    console.log('[Call] Fetching token for caller...');
-                    const res = await getAgoraToken(data.channelName, 0);
+                    const appId = data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
+                    const token = data.token;
+                    const uid = data.uid || 0;
 
-                    // Final check before joining
-                    if (activeChannelRef.current !== data.channelName) {
-                        console.warn('[Call] Session already invalidated, aborting join');
-                        return;
+                    if (!token) {
+                        console.error('[Call] No token in handleAccepted broadcast');
+                        throw new Error('No token provided');
                     }
 
-                    const appId = res.data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
-                    console.log('[Agora] Caller joining channel:', data.channelName);
-
-                    await agora.joinChannel(appId, data.channelName, res.data.token, 0);
+                    console.log('[Agora] Joining channel with broadcasted token');
+                    await agora.joinChannel(appId, data.channelName, token, uid);
                     await agora.publishTracks(isAudioOnly ? 'audio' : 'video');
 
-                    console.log('[Call] Caller fully connected');
+                    console.log('[Call] Session connected successfully');
                     setCallStatus('connected');
+                    setIncomingCall(null);
                 } catch (err) {
-                    console.error('[Call] Caller connection failed:', err);
+                    console.error('[Call] Final session handshake failed:', err);
                     toast.error('Failed to connect call');
                     await cleanup();
                 } finally {
                     isProcessing.current = false;
                 }
             } else {
-                console.warn('[Call] Ignoring call_accepted: State mismatch or already processing', {
+                console.warn('[Call] Ignoring acceptCall: State mismatch or already processing', {
                     callStatus,
-                    activeChannel: activeChannelRef.current,
-                    incomingChannel: data.channelName,
+                    isExpecting: isExpectingConnection,
                     isProcessing: isProcessing.current
                 });
             }
         };
 
         const handleRejected = () => {
-            console.log('[CallContext] Call rejected by remote');
+            console.log('[Socket] callRejected received');
             if (callStatus === 'calling') {
                 toast.error('Call rejected');
                 cleanup();
@@ -126,16 +127,28 @@ export function CallProvider({ children }: { children: ReactNode }) {
         };
 
         const handleEnded = () => {
-            console.log('[CallContext] Call ended by remote');
+            console.log('[Socket] callEnded received');
             cleanup();
         };
 
+        // Listen for new event names
+        socket.on('incomingCall', handleIncoming);
+        socket.on('acceptCall', handleAccepted);
+        socket.on('callRejected', handleRejected);
+        socket.on('callEnded', handleEnded);
+
+        // Fallback for old event names
         socket.on('incoming_call', handleIncoming);
         socket.on('call_accepted', handleAccepted);
         socket.on('call_rejected', handleRejected);
         socket.on('call_ended', handleEnded);
 
         return () => {
+            socket.off('incomingCall', handleIncoming);
+            socket.off('acceptCall', handleAccepted);
+            socket.off('callRejected', handleRejected);
+            socket.off('callEnded', handleEnded);
+
             socket.off('incoming_call', handleIncoming);
             socket.off('call_accepted', handleAccepted);
             socket.off('call_rejected', handleRejected);
@@ -144,9 +157,9 @@ export function CallProvider({ children }: { children: ReactNode }) {
     }, [socket, callStatus, isAudioOnly, agora, cleanup]);
 
     const startCall = async (remoteUser: User, type: 'audio' | 'video') => {
-        if (!user || isProcessing.current) return;
+        if (!user || isProcessing.current || !socket) return;
         const channelName = `call_${user._id}_${Date.now()}`;
-        console.log('[CallContext] Initiating call with:', remoteUser.username, type);
+        console.log('[Call] Initiating socket call with:', remoteUser.username, type);
         setIsAudioOnly(type === 'audio');
         activeChannelRef.current = channelName;
 
@@ -157,17 +170,19 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 receiverId: remoteUser._id,
                 channelName,
                 callType: type,
-                receiverInfo: remoteUser // Added for UI
+                receiverInfo: remoteUser
             } as any);
 
-            await initiateCall({
-                callerId: user._id,
+            // Purely socket-based initiation as requested
+            socket.emit('initiate_call', {
+                callerId: user,
                 receiverId: remoteUser._id,
                 channelName,
                 callType: type,
             });
+            console.log('[Socket] initiate_call emitted');
         } catch (err) {
-            console.error('[CallContext] Failed to initiate call:', err);
+            console.error('[Call] Failed to initiate call:', err);
             toast.error('Failed to initiate call');
             setCallStatus('idle');
             setActiveCall(null);
@@ -176,37 +191,32 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
     const acceptCall = async () => {
         if (!incomingCall || !socket || isProcessing.current) return;
-        console.log('[CallContext] Accepting call:', incomingCall.channelName);
+        console.log('[Call] Accepting call (Socket Only Mode):', incomingCall.channelName);
         activeChannelRef.current = incomingCall.channelName;
 
-        isProcessing.current = true;
         try {
             const { channelName, callType } = incomingCall;
             setIsAudioOnly(callType === 'audio');
             setActiveCall(incomingCall);
 
-            console.log('[CallContext] Fetching token for receiver...');
-            const res = await getAgoraToken(channelName, 0);
-            const appId = res.data.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || '';
-            console.log('[CallContext] Receiver joining channel with appId:', appId);
-            await agora.joinChannel(appId, channelName, res.data.token, 0);
-            await agora.publishTracks(callType);
+            // Signal acceptance - Backend will now broadcast tokens to BOTH users
+            socket.emit('acceptCall', {
+                channelName,
+                callerId: incomingCall.callerId._id
+            });
 
-            socket.emit('call_accepted', { channelName, callerId: incomingCall.callerId._id });
-            console.log('[CallContext] Receiver connected and published');
-            setCallStatus('connected');
-            setIncomingCall(null);
+            console.log('[Socket] acceptCall emitted. Waiting for tokens broadcast...');
+            // The handleAccepted listener will finish the job when tokens arrive
         } catch (err) {
-            console.error('[CallContext] Failed to accept call:', err);
-            toast.error('Failed to connect call');
+            console.error('[Call] Failed to emit acceptance:', err);
+            toast.error('Failed to accept call');
             await cleanup();
-        } finally {
-            isProcessing.current = false;
         }
     };
 
     const rejectCall = () => {
         if (!incomingCall || !socket || isProcessing.current) return;
+        socket.emit('callRejected', { callerId: incomingCall.callerId._id });
         socket.emit('call_rejected', { callerId: incomingCall.callerId._id });
         cleanup();
     };
@@ -219,7 +229,11 @@ export function CallProvider({ children }: { children: ReactNode }) {
                 ? activeCall.receiverId
                 : activeCall.callerId._id;
 
-            console.log('[Socket] Emitting call_ended to:', remoteUserId);
+            console.log('[Socket] Emitting callEnded to:', remoteUserId);
+            socket.emit('callEnded', {
+                channelName: activeCall.channelName,
+                receiverId: remoteUserId
+            });
             socket.emit('call_ended', {
                 channelName: activeCall.channelName,
                 receiverId: remoteUserId
