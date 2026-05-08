@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, ArrowLeft, Phone, Video, Paperclip, X, Image as ImageIcon, File as FileIcon, Film, Info } from 'lucide-react';
+import { Send, ArrowLeft, Phone, Video, Paperclip, X, Image as ImageIcon, File as FileIcon, Film, Info, Mic, Trash2, StopCircle } from 'lucide-react';
 import { Conversation, Message } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
 import { useCall } from '@/context/CallContext';
-import { getMessages, sendMessage, uploadFile } from '@/lib/api';
+import { getMessages, sendMessage, uploadFile, sendVoiceMessage } from '@/lib/api';
 import MessageBubble from './MessageBubble';
 import Avatar from '@/components/ui/Avatar';
 import toast from 'react-hot-toast';
@@ -46,6 +46,13 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+
+  // Voice recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const other = conversation.participants.find((p) => p._id !== user?._id);
   const isOnline = other ? onlineUsers.includes(other._id) : false;
@@ -116,6 +123,88 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     setSelectedFile(null);
     setFilePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Voice Recording Logic
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        if (chunksRef.current.length > 0) {
+          handleSendVoice(audioBlob);
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      toast.error('Could not access microphone');
+      console.error(err);
+    }
+  };
+
+  const stopRecording = (shouldSend = true) => {
+    if (mediaRecorderRef.current && isRecording) {
+      if (!shouldSend) chunksRef.current = []; // Clear chunks if cancelled
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleSendVoice = async (blob: Blob) => {
+    setIsSending(true);
+    const tempId = `temp-voice-${Date.now()}`;
+
+    // Optimistic update
+    const optimistic: Message = {
+      _id: tempId,
+      conversationId: conversation._id,
+      senderId: { _id: user!._id, username: user!.username, avatar: user!.avatar || '' },
+      text: '',
+      isRead: false,
+      fileUrl: URL.createObjectURL(blob), // Local preview
+      fileType: 'voice',
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
+
+    try {
+      const res = await sendVoiceMessage(conversation._id, blob);
+      setMessages(prev => prev.map(m => m._id === tempId ? res.data.message : m));
+
+      if (socket) {
+        socket.emit('sendMessage', {
+          receiverId: other?._id,
+          message: res.data.message
+        });
+      }
+    } catch (err) {
+      toast.error('Failed to send voice message');
+      setMessages(prev => prev.filter(m => m._id !== tempId));
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleSend = async () => {
@@ -350,45 +439,81 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         )}
 
         <div className="flex items-end gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-[#7C6EFF]/40 transition-all">
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={handleFileSelect}
-            className="hidden"
-            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isSending || isUploading}
-            className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30"
-          >
-            <Paperclip size={18} />
-          </button>
+          {isRecording ? (
+            <div className="flex-1 flex items-center justify-between animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-sm font-mono text-white/90">{formatTime(recordingTime)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => stopRecording(false)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                >
+                  <Trash2 size={18} />
+                </button>
+                <button
+                  onClick={() => stopRecording(true)}
+                  className="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all active:scale-95"
+                >
+                  <StopCircle size={20} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+                accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSending || isUploading}
+                className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30"
+              >
+                <Paperclip size={18} />
+              </button>
 
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder={isUploading ? 'Uploading...' : `Message ${other?.username || ''}...`}
-            className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none resize-none font-sans leading-relaxed max-h-[120px] overflow-y-auto"
-          />
-          <button
-            onClick={handleSend}
-            disabled={(!text.trim() && !selectedFile) || isSending || isUploading}
-            className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#7C6EFF] to-[#6A5EE0] text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[#7C6EFF]/30 disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {isSending || isUploading ? (
-              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Send size={14} />
-            )}
-          </button>
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={isUploading ? 'Uploading...' : `Message ${other?.username || ''}...`}
+                className="flex-1 bg-transparent text-sm text-white placeholder-white/20 outline-none resize-none font-sans leading-relaxed max-h-[120px] overflow-y-auto"
+              />
+
+              {!text.trim() && !selectedFile ? (
+                <button
+                  onClick={startRecording}
+                  disabled={isSending || isUploading}
+                  className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all disabled:opacity-30"
+                >
+                  <Mic size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={(!text.trim() && !selectedFile) || isSending || isUploading}
+                  className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#7C6EFF] to-[#6A5EE0] text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[#7C6EFF]/30 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {isSending || isUploading ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send size={14} />
+                  )}
+                </button>
+              )}
+            </>
+          )}
         </div>
         <p className="text-[10px] text-white/15 text-center mt-2 font-sans">
           Press Enter to send · Shift+Enter for new line

@@ -69,6 +69,15 @@ export const uploadFile = (file: File) => {
 export const getMessages = (conversationId: string, page = 1, limit = 50) =>
   api.get(`/api/messages/${conversationId}?page=${page}&limit=${limit}`);
 
+export const sendVoiceMessage = (conversationId: string, audioBlob: Blob) => {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'voice.webm');
+  formData.append('conversationId', conversationId);
+  return api.post('/api/messages/voice', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
 // Agora & Calling
 export const getAgoraToken = (channelName: string, uid: number) =>
   api.post('/api/agora/token', { channelName, uid });
