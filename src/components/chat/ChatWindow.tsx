@@ -138,9 +138,17 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       };
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        if (chunksRef.current.length > 0) {
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
+
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+
+        // Only send if it's longer than 1 second to avoid empty notes
+        if (chunksRef.current.length > 0 && recordingTime >= 1) {
           handleSendVoice(audioBlob);
+        } else if (recordingTime < 1) {
+          toast.error('Recording too short');
         }
         stream.getTracks().forEach(track => track.stop());
       };

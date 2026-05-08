@@ -118,7 +118,8 @@ export default function MessageBubble({ message, showAvatar = true }: MessageBub
                   controls
                   className="max-h-60 w-full rounded-lg bg-black/20"
                 />
-              ) : message.fileType === 'voice' ? (
+              ) : (message.fileType === 'voice' ||
+                (message.fileUrl && /\.(webm|mp3|wav|ogg|m4a)$/i.test(message.fileUrl))) ? (
                 <VoicePlayer url={message.fileUrl} />
               ) : (
                 <a
