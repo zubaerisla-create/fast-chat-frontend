@@ -19,7 +19,7 @@ export interface Message {
   text: string;
   isRead: boolean;
   fileUrl?: string;
-  fileType?: 'image' | 'video' | 'file' | 'voice';
+  fileType?: 'image' | 'video' | 'file' | 'voice' | 'audio';
   fileName?: string;
   fileSize?: number;
   createdAt: string;

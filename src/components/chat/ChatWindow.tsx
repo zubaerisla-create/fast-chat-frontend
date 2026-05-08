@@ -76,8 +76,30 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     setMessages([]);
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000);
+
+    // Socket listener for real-time messages
+    if (socket) {
+      const handleNewMsg = (msg: Message) => {
+        if (msg.conversationId === conversation._id && msg.senderId._id !== user?._id) {
+          setMessages(prev => {
+            if (prev.some(m => m._id === msg._id)) return prev;
+            return [...prev, msg];
+          });
+        }
+      };
+
+      socket.on('newMessage', handleNewMsg);
+      socket.on('receiveMessage', handleNewMsg); // As per user's latest backend spec
+
+      return () => {
+        clearInterval(interval);
+        socket.off('newMessage', handleNewMsg);
+        socket.off('receiveMessage', handleNewMsg);
+      };
+    }
+
     return () => clearInterval(interval);
-  }, [fetchMessages]);
+  }, [fetchMessages, socket, conversation._id, user?._id]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
