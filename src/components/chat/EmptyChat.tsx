@@ -12,7 +12,7 @@ export default function EmptyChat() {
         </div>
         <h2 className="font-display text-2xl font-bold text-white/80 mb-2">Your Messages</h2>
         <p className="text-white/30 text-sm font-sans max-w-[240px]">
-          Select a conversation from the sidebar or start a new one
+          Select a conversation from the sidebar or start a new one by clicking on the search icon
         </p>
 
         {/* Decorative dots */}
