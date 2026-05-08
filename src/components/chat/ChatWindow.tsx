@@ -49,6 +49,9 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
 
   const other = conversation.participants.find((p) => p._id !== user?._id);
   const isOnline = other ? onlineUsers.includes(other._id) : false;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isInitialLoad = useRef(true);
+  const prevLastMessageId = useRef<string | null>(null);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -70,8 +73,24 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   }, [fetchMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const container = scrollContainerRef.current;
+    if (!container || messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const isNewMessage = lastMessage._id !== prevLastMessageId.current;
+
+    if (isNewMessage) {
+      const isOwnMessage = lastMessage.senderId._id === user?._id;
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+      if (isInitialLoad.current || isOwnMessage || isNearBottom) {
+        bottomRef.current?.scrollIntoView({ behavior: isInitialLoad.current ? 'auto' : 'smooth' });
+        if (isInitialLoad.current) isInitialLoad.current = false;
+      }
+      prevLastMessageId.current = lastMessage._id;
+    }
+  }, [messages, user?._id]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -252,7 +271,10 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-1">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-1"
+      >
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex gap-1.5">

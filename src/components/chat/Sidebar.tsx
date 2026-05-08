@@ -99,8 +99,9 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
             <button
               onClick={() => setShowSearch(!showSearch)}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all"
+              title="Find people"
             >
-              <Plus size={16} />
+              <Search size={16} />
             </button>
             <button
               onClick={() => setShowProfileModal(true)}
