@@ -46,7 +46,7 @@ export default function AuthPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C6EFF] to-[#A89CFF] mb-4 shadow-lg shadow-[#7C6EFF]/30">
             <span className="text-2xl">💬</span>
           </div>
-          <h1 className="font-display text-4xl font-bold gradient-text">Vibe</h1>
+          <h1 className="font-display text-4xl font-bold gradient-text">fast-chat</h1>
           <p className="text-white/40 text-sm mt-1 font-sans">Real-time chat. Clean & fast.</p>
         </div>
 

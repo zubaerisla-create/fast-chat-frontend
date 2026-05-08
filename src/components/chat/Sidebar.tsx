@@ -94,7 +94,7 @@ export default function Sidebar({ activeConversationId, onSelectConversation, on
       {/* Header */}
       <div className="px-5 py-5 border-b border-[rgba(124,110,255,0.1)]">
         <div className="flex items-center justify-between mb-5">
-          <h1 className="font-display text-xl font-bold gradient-text">Vibe</h1>
+          <h1 className="font-display text-xl font-bold gradient-text">fast-chat</h1>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowSearch(!showSearch)}

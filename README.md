@@ -1,4 +1,4 @@
-# Vibe Chat — Next.js Frontend
+# fast-Chat — Next.js Frontend
 
 A sleek, real-time chat application built with Next.js 14, TypeScript, and Tailwind CSS.
 
