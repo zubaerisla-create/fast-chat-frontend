@@ -29,7 +29,10 @@ api.interceptors.response.use(
 );
 
 // Auth
-export const registerUser = (data: { username: string; email: string; password: string }) =>
+export const sendSignupOTP = (data: { email: string; username?: string }) =>
+  api.post('/api/auth/send-otp', data);
+
+export const registerUser = (data: { username: string; email: string; password: string; otp: string }) =>
   api.post('/api/auth/register', data);
 
 export const loginUser = (data: { email: string; password: string }) =>

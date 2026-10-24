@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { loginUser, registerUser } from '@/lib/api';
+import { loginUser, registerUser, sendSignupOTP } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', otp: '' });
+  const [otpSent, setOtpSent] = useState(false);
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -19,10 +20,21 @@ export default function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
+      if (mode === 'register' && !otpSent) {
+        await sendSignupOTP({ email: form.email.trim(), username: form.username.trim() });
+        setOtpSent(true);
+        toast.success('Verification code sent. Please check your email.');
+        return;
+      }
       const res =
         mode === 'login'
           ? await loginUser({ email: form.email, password: form.password })
-          : await registerUser(form);
+          : await registerUser({
+              username: form.username.trim(),
+              email: form.email.trim(),
+              password: form.password,
+              otp: form.otp.trim(),
+            });
       const { token, user } = res.data;
       login(user, token);
       toast.success(mode === 'login' ? 'Welcome back!' : 'Account created!');
@@ -57,7 +69,12 @@ export default function AuthPage() {
             {(['login', 'register'] as const).map((m) => (
               <button
                 key={m}
-                onClick={() => setMode(m)}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  setOtpSent(false);
+                  setForm((f) => ({ ...f, otp: '' }));
+                }}
                 className={`flex-1 py-2 rounded-lg text-sm font-sans font-medium transition-all duration-200 ${mode === m
                   ? 'bg-[#7C6EFF] text-white shadow-lg shadow-[#7C6EFF]/20'
                   : 'text-white/40 hover:text-white/70'
@@ -93,7 +110,10 @@ export default function AuthPage() {
                 type="email"
                 required
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, email: e.target.value, otp: '' });
+                  setOtpSent(false);
+                }}
                 placeholder="you@example.com"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm font-sans outline-none input-glow transition-all focus:border-[#7C6EFF]/50"
               />
@@ -122,6 +142,42 @@ export default function AuthPage() {
               </div>
             </div>
 
+            {mode === 'register' && otpSent && (
+              <div>
+                <label className="block text-xs text-white/40 mb-1.5 font-sans uppercase tracking-wider">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  value={form.otp}
+                  onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                  placeholder="Enter the code from your email"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm font-sans outline-none input-glow transition-all focus:border-[#7C6EFF]/50"
+                />
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={async () => {
+                    setIsLoading(true);
+                    try {
+                      await sendSignupOTP({ email: form.email.trim(), username: form.username.trim() });
+                      toast.success('A new code has been sent.');
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.message || 'Something went wrong');
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  className="mt-2 text-xs text-[#A89CFF] hover:text-white transition-colors font-sans disabled:opacity-50"
+                >
+                  Resend code
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
@@ -130,12 +186,14 @@ export default function AuthPage() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+                  {mode === 'login' ? 'Signing in...' : otpSent ? 'Creating account...' : 'Sending code...'}
                 </span>
               ) : mode === 'login' ? (
                 'Sign In'
-              ) : (
+              ) : otpSent ? (
                 'Create Account'
+              ) : (
+                'Send Verification Code'
               )}
             </button>
           </form>
