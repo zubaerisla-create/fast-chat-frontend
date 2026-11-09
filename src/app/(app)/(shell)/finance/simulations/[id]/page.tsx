@@ -57,17 +57,17 @@ export default function SimulationDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <RefreshCw className="animate-spin text-rose-500" size={36} />
-        <p className="text-sm font-semibold text-rose-200/70">Loading AI financial simulation evaluation...</p>
+        <p className="text-sm font-semibold text-slate-400">Loading AI financial simulation evaluation...</p>
       </div>
     );
   }
 
   if (!sim) {
     return (
-      <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl border border-pink-500/20 bg-[#1A0C19] text-center space-y-4">
+      <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl border border-white/10 bg-[#12141C] text-center space-y-4">
         <AlertCircle className="mx-auto text-rose-400" size={48} />
         <h2 className="text-xl font-bold text-white">Simulation Not Found</h2>
-        <p className="text-sm text-rose-200/70">The simulation evaluation could not be located.</p>
+        <p className="text-sm text-slate-400">The simulation evaluation could not be located.</p>
         <Link
           href="/finance?tab=simulator"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-bold hover:opacity-90 transition-all shadow-md shadow-rose-950/40"
@@ -85,11 +85,11 @@ export default function SimulationDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       {/* ── Top Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-pink-500/10 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5">
         <div className="flex items-center gap-4">
           <Link
             href="/finance?tab=simulator"
-            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white transition-all border border-pink-500/20"
+            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white transition-all border border-white/10"
             title="Back to Finance Hub"
           >
             <ArrowLeft size={20} />
@@ -100,7 +100,7 @@ export default function SimulationDetailPage() {
                 AI DECISION EVALUATION
               </span>
               <span className="text-rose-200/40">•</span>
-              <span className="text-xs text-rose-200/60">
+              <span className="text-xs text-slate-400">
                 {new Date(sim.created_at).toLocaleDateString()}
               </span>
             </div>
@@ -115,10 +115,10 @@ export default function SimulationDetailPage() {
           <select
             value={currency}
             onChange={(e) => changeCurrency(e.target.value)}
-            className="appearance-none pl-3.5 pr-8 py-2 rounded-2xl bg-[#1A0C19] border border-pink-500/30 text-xs font-bold text-rose-300 focus:outline-none cursor-pointer shadow-md"
+            className="appearance-none pl-3.5 pr-8 py-2 rounded-2xl bg-[#12141C] border border-rose-500/30 text-xs font-bold text-rose-300 focus:outline-none cursor-pointer shadow-md"
           >
             {currencies.map((c) => (
-              <option key={c.code} value={c.code} className="bg-[#1A0C19] text-white">
+              <option key={c.code} value={c.code} className="bg-[#12141C] text-white">
                 {c.symbol} {c.code}
               </option>
             ))}
@@ -158,7 +158,7 @@ export default function SimulationDetailPage() {
               >
                 {riskLevel} IMPACT
               </span>
-              <span className="text-xs text-rose-200/60">
+              <span className="text-xs text-slate-400">
                 Decision evaluated for {formatMoney(sim.purchase_amount)} commitment
               </span>
             </div>
@@ -169,7 +169,7 @@ export default function SimulationDetailPage() {
                 ? 'Budget Strain Warning'
                 : 'High Risk / Unadvisable'}
             </h3>
-            <p className="text-sm text-rose-200/80">
+            <p className="text-sm text-slate-300">
               {sim.ai_guidance?.summary ||
                 (isSafe
                   ? 'This purchase fits cleanly within your surplus and emergency reserves.'
@@ -181,59 +181,59 @@ export default function SimulationDetailPage() {
 
       {/* ── Parameters & Comparison Matrix ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="rounded-3xl border border-pink-500/20 bg-[#1A0C19] p-6 space-y-4 shadow-xl">
+        <div className="rounded-3xl border border-white/10 bg-[#12141C] p-6 space-y-4 shadow-xl">
           <h4 className="text-base font-bold text-white">Purchase Specifications</h4>
           <div className="space-y-3 text-sm divide-y divide-pink-500/10">
             <div className="flex items-center justify-between pt-2">
-              <span className="text-rose-200/60">Total Purchase / Capital</span>
+              <span className="text-slate-400">Total Purchase / Capital</span>
               <span className="font-black text-white text-base">
                 {formatMoney(sim.purchase_amount)}
               </span>
             </div>
             <div className="flex items-center justify-between pt-3">
-              <span className="text-rose-200/60">Payment Strategy</span>
+              <span className="text-slate-400">Payment Strategy</span>
               <span className="font-bold text-white">
                 {sim.payment_type === 'loan' ? 'Financed / Loan' : 'Pay Upfront (Full)'}
               </span>
             </div>
             {sim.loan_duration ? (
               <div className="flex items-center justify-between pt-3">
-                <span className="text-rose-200/60">Repayment Duration</span>
+                <span className="text-slate-400">Repayment Duration</span>
                 <span className="font-bold text-white">{sim.loan_duration} Months</span>
               </div>
             ) : null}
             {sim.interest_rate ? (
               <div className="flex items-center justify-between pt-3">
-                <span className="text-rose-200/60">Interest Rate</span>
+                <span className="text-slate-400">Interest Rate</span>
                 <span className="font-bold text-white">{sim.interest_rate}% APR</span>
               </div>
             ) : null}
           </div>
         </div>
 
-        <div className="rounded-3xl border border-pink-500/20 bg-[#1A0C19] p-6 space-y-4 shadow-xl">
+        <div className="rounded-3xl border border-white/10 bg-[#12141C] p-6 space-y-4 shadow-xl">
           <h4 className="text-base font-bold text-white">Strategic Impact Comparison</h4>
           <div className="space-y-3 text-sm divide-y divide-pink-500/10">
             <div className="flex items-center justify-between pt-2">
-              <span className="text-rose-200/60">Upfront Pay-in-full</span>
+              <span className="text-slate-400">Upfront Pay-in-full</span>
               <span className="font-black text-white">
                 {formatMoney(sim.purchase_amount)}
               </span>
             </div>
             <div className="flex items-center justify-between pt-3">
-              <span className="text-rose-200/60">Monthly Financing Installment</span>
+              <span className="text-slate-400">Monthly Financing Installment</span>
               <span className="font-black text-white">
                 {formatMoney(sim.monthly_payment || 0)} / mo
               </span>
             </div>
             <div className="flex items-center justify-between pt-3">
-              <span className="text-rose-200/60">Estimated Capital Recovery</span>
+              <span className="text-slate-400">Estimated Capital Recovery</span>
               <span className="font-bold text-rose-300">
                 {sim.months_to_recover ? `${sim.months_to_recover} Months` : 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between pt-3">
-              <span className="text-rose-200/60">Post-Commitment Monthly Cushion</span>
+              <span className="text-slate-400">Post-Commitment Monthly Cushion</span>
               <span
                 className={`font-black ${
                   (sim.remaining_cushion || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -247,18 +247,18 @@ export default function SimulationDetailPage() {
       </div>
 
       {/* ── AI Advisory Guidance ── */}
-      <div className="rounded-3xl border border-pink-500/20 bg-[#1A0C19] p-6 lg:p-8 space-y-4 shadow-xl">
+      <div className="rounded-3xl border border-white/10 bg-[#12141C] p-6 lg:p-8 space-y-4 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-md shadow-rose-950/40">
             <Sparkles size={18} />
           </div>
           <div>
             <h4 className="text-base font-bold text-white">AI Financial Strategy Guidance</h4>
-            <p className="text-xs text-rose-200/60">Personalized automated recommendations based on your cashflow.</p>
+            <p className="text-xs text-slate-400">Personalized automated recommendations based on your cashflow.</p>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#120711] border border-pink-500/15 space-y-2 text-sm text-rose-200/80 leading-relaxed">
+        <div className="p-5 rounded-2xl bg-[#0B0C11] border border-white/10 space-y-2 text-sm text-slate-300 leading-relaxed">
           <p>
             {sim.ai_guidance?.recommendation ||
               'Ensure you keep an active cash cushion in your liquid accounts. Delay non-essential capital investments if cash reserves dip below 3 months of living costs.'}

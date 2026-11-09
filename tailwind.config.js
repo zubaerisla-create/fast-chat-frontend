@@ -51,9 +51,9 @@ module.exports = {
           dark: '#E11D48',
         },
         surface: {
-          DEFAULT: '#1D0E1C',
-          raised: '#261325',
-          overlay: '#331831',
+          DEFAULT: '#141620',
+          raised: '#1A1D2A',
+          overlay: '#222636',
         },
       },
       animation: {
