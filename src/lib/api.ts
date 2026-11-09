@@ -167,3 +167,11 @@ export const getFinanceGoals = () => api.get('/api/finance/goals');
 export const createFinanceGoal = (data: any) => api.post('/api/finance/goals', data);
 export const updateFinanceGoal = (id: string, data: any) => api.patch(`/api/finance/goals/${id}`, data);
 export const deleteFinanceGoal = (id: string) => api.delete(`/api/finance/goals/${id}`);
+export const getFinanceSubscription = () => api.get('/api/finance/subscription');
+export const syncFinanceSubscription = (data: {
+  plan: string;
+  revenuecatCustomerId?: string;
+  originalTransactionId?: string;
+  currentPeriodEnd?: string | null;
+  status?: string;
+}) => api.post('/api/finance/subscription/sync', data);

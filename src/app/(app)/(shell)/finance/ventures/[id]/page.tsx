@@ -35,7 +35,7 @@ import {
 const TX_TYPES = [
   { key: 'PROFIT', label: 'Sale / Profit (+)', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
   { key: 'EXPENSE', label: 'Expense (-)', color: 'text-rose-400 bg-rose-500/10 border-rose-500/30' },
-  { key: 'INVESTMENT', label: 'Capital Invested (+)', color: 'text-[#635BFF] bg-[#635BFF]/10 border-[#635BFF]/30' },
+  { key: 'INVESTMENT', label: 'Capital Invested (+)', color: 'text-rose-300 bg-rose-500/10 border-rose-500/30' },
   { key: 'WITHDRAWAL', label: 'Withdrawal (-)', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
 ];
 
@@ -153,21 +153,21 @@ export default function VentureDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <RefreshCw className="animate-spin text-[#635BFF]" size={36} />
-        <p className="text-sm font-semibold text-slate-400">Loading venture ledger & analytics...</p>
+        <RefreshCw className="animate-spin text-rose-500" size={36} />
+        <p className="text-sm font-semibold text-rose-200/70">Loading venture ledger & analytics...</p>
       </div>
     );
   }
 
   if (!business) {
     return (
-      <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl border border-white/10 bg-[#0F172A] text-center space-y-4">
+      <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl border border-pink-500/20 bg-[#1A0C19] text-center space-y-4">
         <AlertCircle className="mx-auto text-rose-400" size={48} />
         <h2 className="text-xl font-bold text-white">Venture Not Found</h2>
-        <p className="text-sm text-slate-400">The requested business venture could not be loaded.</p>
+        <p className="text-sm text-rose-200/70">The requested business venture could not be loaded.</p>
         <Link
           href="/finance?tab=portfolio"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#635BFF] text-white text-sm font-bold hover:opacity-90 transition-all"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-bold hover:opacity-90 transition-all shadow-md shadow-rose-950/40"
         >
           <ArrowLeft size={16} /> Back to Finance Hub
         </Link>
@@ -180,22 +180,22 @@ export default function VentureDetailPage() {
   return (
     <div className="space-y-8 pb-16">
       {/* ── Top Navigation Bar ── */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-pink-500/10 pb-5">
         <div className="flex items-center gap-4">
           <Link
             href="/finance?tab=portfolio"
-            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white transition-all border border-white/10"
+            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white transition-all border border-pink-500/20"
             title="Back to Ventures"
           >
             <ArrowLeft size={20} />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black tracking-widest uppercase text-[#00D4FF]">
+              <span className="text-[11px] font-black tracking-widest uppercase text-rose-400">
                 VENTURE LEDGER & ANALYTICS
               </span>
-              <span className="text-slate-600">•</span>
-              <span className="text-xs text-slate-400">
+              <span className="text-rose-200/40">•</span>
+              <span className="text-xs text-rose-200/60">
                 Started {new Date(business.startDate || business.created_at).toLocaleDateString()}
               </span>
             </div>
@@ -205,26 +205,26 @@ export default function VentureDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {/* Currency Switcher */}
           <div className="relative">
             <select
               value={currency}
               onChange={(e) => changeCurrency(e.target.value)}
-              className="appearance-none pl-3.5 pr-8 py-2 rounded-2xl bg-[#0F172A] border border-[#00D4FF]/30 text-xs font-bold text-[#00D4FF] focus:outline-none cursor-pointer shadow-md"
+              className="appearance-none pl-3.5 pr-8 py-2 rounded-2xl bg-[#1A0C19] border border-pink-500/30 text-xs font-bold text-rose-300 focus:outline-none cursor-pointer shadow-md"
             >
               {currencies.map((c) => (
-                <option key={c.code} value={c.code} className="bg-[#0F172A] text-white">
+                <option key={c.code} value={c.code} className="bg-[#1A0C19] text-white">
                   {c.symbol} {c.code}
                 </option>
               ))}
             </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#00D4FF] pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-rose-300 pointer-events-none" />
           </div>
 
           <button
             onClick={() => setShowTxModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#635BFF] to-[#00D4FF] text-white text-sm font-bold shadow-lg hover:opacity-90 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-bold shadow-lg shadow-rose-950/40 hover:opacity-90 transition-all"
           >
             <Plus size={16} />
             <span>Record Entry</span>
@@ -240,13 +240,13 @@ export default function VentureDetailPage() {
       </div>
 
       {/* ── Hero Balance Card (Mayramao Style) ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0F172A] via-[#111C38] to-[#070B14] p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[#00D4FF]/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-[#635BFF]/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-pink-500/20 bg-gradient-to-br from-[#1C0E1C] via-[#261023] to-[#120711] p-6 sm:p-8 shadow-2xl">
+        <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           <div className="md:col-span-2 space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-black uppercase tracking-wider text-rose-200/70">
               CURRENT RUNNING BALANCE
             </span>
             <div className="flex items-baseline gap-4 flex-wrap">
@@ -267,24 +267,24 @@ export default function VentureDetailPage() {
               </div>
             </div>
             {business.description && (
-              <p className="text-sm text-slate-300 max-w-2xl pt-1">{business.description}</p>
+              <p className="text-sm text-rose-200/80 max-w-2xl pt-1">{business.description}</p>
             )}
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-400">
+          <div className="p-4 rounded-2xl bg-white/[0.03] border border-pink-500/15 space-y-2">
+            <div className="flex items-center justify-between text-xs text-rose-200/70">
               <span>Total Transactions</span>
               <span className="font-bold text-white">
                 {business.transactionCount || business.recentTransactions?.length || 0}
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="flex items-center justify-between text-xs text-rose-200/70">
               <span>Initial Capital</span>
               <span className="font-bold text-white">
                 {formatMoney(business.initial_investment || 0)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="flex items-center justify-between text-xs text-rose-200/70">
               <span>Opening Balance</span>
               <span className="font-bold text-white">
                 {formatMoney(business.opening_balance || 0)}
@@ -296,22 +296,22 @@ export default function VentureDetailPage() {
 
       {/* ── 4 Key Performance Metrics ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="rounded-2xl border border-white/10 bg-[#0F172A] p-5 space-y-2 shadow-lg">
+        <div className="rounded-2xl border border-pink-500/20 bg-[#1A0C19] p-5 space-y-2 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Capital Invested</span>
-            <div className="p-2 rounded-xl bg-[#635BFF]/10 text-[#635BFF]">
+            <span className="text-xs font-semibold text-rose-200/70">Capital Invested</span>
+            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400">
               <Wallet size={16} />
             </div>
           </div>
           <p className="text-2xl font-black text-white">
             {formatMoney(business.totalInvestment || 0)}
           </p>
-          <p className="text-[11px] text-slate-500">Total injected equity</p>
+          <p className="text-[11px] text-rose-200/50">Total injected equity</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#0F172A] p-5 space-y-2 shadow-lg">
+        <div className="rounded-2xl border border-pink-500/20 bg-[#1A0C19] p-5 space-y-2 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Gross Sales / Revenue</span>
+            <span className="text-xs font-semibold text-rose-200/70">Gross Sales / Revenue</span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
               <TrendingUp size={16} />
             </div>
@@ -319,12 +319,12 @@ export default function VentureDetailPage() {
           <p className="text-2xl font-black text-emerald-400">
             {formatMoney(business.totalSales || 0)}
           </p>
-          <p className="text-[11px] text-slate-500">Cumulative sales & revenue</p>
+          <p className="text-[11px] text-rose-200/50">Cumulative sales & revenue</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#0F172A] p-5 space-y-2 shadow-lg">
+        <div className="rounded-2xl border border-pink-500/20 bg-[#1A0C19] p-5 space-y-2 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Operating Expenses</span>
+            <span className="text-xs font-semibold text-rose-200/70">Operating Expenses</span>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400">
               <Receipt size={16} />
             </div>
@@ -332,12 +332,12 @@ export default function VentureDetailPage() {
           <p className="text-2xl font-black text-rose-400">
             {formatMoney(business.totalExpenses || 0)}
           </p>
-          <p className="text-[11px] text-slate-500">Operational costs & bills</p>
+          <p className="text-[11px] text-rose-200/50">Operational costs & bills</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#0F172A] p-5 space-y-2 shadow-lg">
+        <div className="rounded-2xl border border-pink-500/20 bg-[#1A0C19] p-5 space-y-2 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Net Profit</span>
+            <span className="text-xs font-semibold text-rose-200/70">Net Profit</span>
             <div
               className={`p-2 rounded-xl ${
                 isProfitable ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
@@ -349,29 +349,29 @@ export default function VentureDetailPage() {
           <p className={`text-2xl font-black ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}`}>
             {formatMoney(business.netProfit || 0)}
           </p>
-          <p className="text-[11px] text-slate-500">Total Sales minus Expenses</p>
+          <p className="text-[11px] text-rose-200/50">Total Sales minus Expenses</p>
         </div>
       </div>
 
       {/* ── Venture Ledger Section ── */}
-      <div className="rounded-3xl border border-white/10 bg-[#0F172A] p-6 lg:p-8 space-y-6 shadow-2xl">
+      <div className="rounded-3xl border border-pink-500/20 bg-[#1A0C19] p-6 lg:p-8 space-y-6 shadow-2xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-black text-white">Venture Transaction Ledger</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-rose-200/70 mt-0.5">
               Detailed chronological record of every investment, sale, and expense for {business.name}.
             </p>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-rose-200/40" size={15} />
               <input
                 type="text"
                 placeholder="Search ledger..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-white/10 bg-[#070B14] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00D4FF]"
+                className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-pink-500/20 bg-[#120711] text-xs text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400"
               />
             </div>
           </div>
@@ -385,8 +385,8 @@ export default function VentureDetailPage() {
               onClick={() => setActiveFilter(t)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 activeFilter === t
-                  ? 'bg-[#00D4FF] text-[#0B132B] shadow-md'
-                  : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-md shadow-rose-950/30'
+                  : 'bg-white/5 text-rose-200/70 hover:text-white border border-pink-500/15'
               }`}
             >
               {t === 'PROFIT' ? 'Sales / Profit' : t}
@@ -396,10 +396,10 @@ export default function VentureDetailPage() {
 
         {/* Ledger Table */}
         {filteredTransactions.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
-            <Receipt className="mx-auto text-slate-600" size={36} />
+          <div className="p-12 text-center rounded-2xl bg-white/[0.02] border border-pink-500/15 space-y-2">
+            <Receipt className="mx-auto text-rose-300/40" size={36} />
             <p className="text-sm font-bold text-white">No ledger entries found</p>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
+            <p className="text-xs text-rose-200/60 max-w-md mx-auto">
               Record sales, expenses or capital additions using the "Record Entry" button above.
             </p>
           </div>
@@ -407,7 +407,7 @@ export default function VentureDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/5 text-[11px] font-black uppercase text-slate-400 tracking-wider">
+                <tr className="border-b border-pink-500/10 text-[11px] font-black uppercase text-rose-200/60 tracking-wider">
                   <th className="pb-3 px-3">Date</th>
                   <th className="pb-3 px-3">Description</th>
                   <th className="pb-3 px-3">Type</th>
@@ -415,24 +415,24 @@ export default function VentureDetailPage() {
                   <th className="pb-3 px-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-pink-500/10">
                 {filteredTransactions.map((tx: any) => {
                   const isPositive = tx.type === 'PROFIT' || tx.type === 'SELL';
                   const isInvest = tx.type === 'INVESTMENT';
                   const amountColor = isPositive
                     ? 'text-emerald-400'
                     : isInvest
-                    ? 'text-[#635BFF]'
+                    ? 'text-rose-300'
                     : 'text-rose-400';
 
                   return (
-                    <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-3 text-xs text-slate-400 whitespace-nowrap">
+                    <tr key={tx.id} className="hover:bg-rose-500/[0.04] transition-colors">
+                      <td className="py-3 px-3 text-xs text-rose-200/60 whitespace-nowrap">
                         {new Date(tx.transaction_date).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-3 font-semibold text-white">
                         <div>{tx.name}</div>
-                        {tx.note && <div className="text-xs text-slate-500">{tx.note}</div>}
+                        {tx.note && <div className="text-xs text-rose-200/50">{tx.note}</div>}
                       </td>
                       <td className="py-3 px-3">
                         <span
@@ -440,7 +440,7 @@ export default function VentureDetailPage() {
                             isPositive
                               ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                               : isInvest
-                              ? 'border-[#635BFF]/30 bg-[#635BFF]/10 text-[#635BFF]'
+                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
                               : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
                           }`}
                         >
@@ -453,7 +453,7 @@ export default function VentureDetailPage() {
                       <td className="py-3 px-3 text-right">
                         <button
                           onClick={() => handleDeleteTransaction(tx.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                          className="p-1.5 rounded-lg text-rose-200/40 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
                           title="Delete entry"
                         >
                           <Trash2 size={15} />
@@ -471,12 +471,12 @@ export default function VentureDetailPage() {
       {/* ── Record Transaction Modal ── */}
       {showTxModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0F172A] p-6 space-y-5 shadow-2xl">
+          <div className="w-full max-w-md rounded-3xl border border-pink-500/20 bg-[#1A0C19] p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-black text-white">Record Venture Entry</h3>
               <button
                 onClick={() => setShowTxModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5"
+                className="p-1.5 rounded-xl text-rose-200/60 hover:text-white hover:bg-white/5"
               >
                 <X size={18} />
               </button>
@@ -484,7 +484,7 @@ export default function VentureDetailPage() {
 
             <form onSubmit={handleRecordTransaction} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">Entry Type</label>
+                <label className="block text-xs font-semibold text-rose-200/80 mb-2">Entry Type</label>
                 <div className="grid grid-cols-2 gap-2">
                   {TX_TYPES.map((t) => (
                     <button
@@ -494,7 +494,7 @@ export default function VentureDetailPage() {
                       className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
                         txType === t.key
                           ? `${t.color} border-current shadow-sm`
-                          : 'border-white/10 bg-white/[0.02] text-slate-400 hover:text-white'
+                          : 'border-pink-500/20 bg-white/[0.02] text-rose-200/60 hover:text-white'
                       }`}
                     >
                       {t.label}
@@ -504,7 +504,7 @@ export default function VentureDetailPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-rose-200/80 mb-1">
                   Title / Description *
                 </label>
                 <input
@@ -512,13 +512,13 @@ export default function VentureDetailPage() {
                   placeholder="e.g. Client Milestone Payment, Supplies"
                   value={txName}
                   onChange={(e) => setTxName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070B14] text-sm text-white focus:outline-none focus:border-[#635BFF]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-pink-500/20 bg-[#120711] text-sm text-white focus:outline-none focus:border-rose-400"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-rose-200/80 mb-1">
                   Amount ({currencySymbol}) *
                 </label>
                 <input
@@ -527,14 +527,14 @@ export default function VentureDetailPage() {
                   placeholder="0.00"
                   value={txAmount}
                   onChange={(e) => setTxAmount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070B14] text-sm text-white focus:outline-none focus:border-[#635BFF]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-pink-500/20 bg-[#120711] text-sm text-white focus:outline-none focus:border-rose-400"
                   min="0.01"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-rose-200/80 mb-1">
                   Note (optional)
                 </label>
                 <input
@@ -542,7 +542,7 @@ export default function VentureDetailPage() {
                   placeholder="Additional context..."
                   value={txNote}
                   onChange={(e) => setTxNote(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#070B14] text-sm text-white focus:outline-none focus:border-[#635BFF]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-pink-500/20 bg-[#120711] text-sm text-white focus:outline-none focus:border-rose-400"
                 />
               </div>
 
@@ -550,14 +550,14 @@ export default function VentureDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowTxModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-rose-200/60 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={txSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#635BFF] hover:bg-[#635BFF]/90 text-white text-xs font-black shadow-lg transition-all"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:opacity-95 text-white text-xs font-black shadow-lg shadow-rose-950/40 transition-all"
                 >
                   {txSubmitting ? 'Saving...' : 'Record Entry'}
                 </button>

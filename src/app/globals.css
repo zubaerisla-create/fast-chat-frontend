@@ -5,16 +5,16 @@
 :root {
   --font-display: 'Trebuchet MS', 'Segoe UI', sans-serif;
   --font-body: 'Segoe UI', system-ui, sans-serif;
-  --accent: #7C6EFF;
-  --accent-light: #A89CFF;
-  --accent-dark: #5A4ECC;
-  --surface: #1A1A2E;
-  --surface-raised: #16213E;
-  --surface-overlay: #0F3460;
-  --bg: #0D0D1A;
-  --text: #F0F0F0;
-  --text-muted: #888;
-  --border: rgba(124, 110, 255, 0.15);
+  --accent: #F43F5E;
+  --accent-light: #FB7185;
+  --accent-dark: #E11D48;
+  --surface: #1D0E1C;
+  --surface-raised: #261325;
+  --surface-overlay: #331831;
+  --bg: #130912;
+  --text: #FFF1F2;
+  --text-muted: #D4B8CB;
+  --border: rgba(244, 63, 94, 0.2);
 }
 
 * {
@@ -36,11 +36,11 @@ html, body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(124, 110, 255, 0.3);
+  background: rgba(244, 63, 94, 0.35);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 110, 255, 0.5);
+  background: rgba(244, 63, 94, 0.55);
 }
 
 /* Smooth scroll */
@@ -50,7 +50,7 @@ html, body {
 
 /* Glass effect */
 .glass {
-  background: rgba(26, 26, 46, 0.8);
+  background: rgba(29, 14, 28, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
@@ -58,7 +58,7 @@ html, body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #7C6EFF, #A89CFF, #E8D5FF);
+  background: linear-gradient(135deg, #F43F5E, #FB7185, #FCE7F3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -167,41 +167,41 @@ html, body {
    Light is the default; [data-theme="dark"] on <html> switches. Values are RGB
    triplets so Tailwind opacity modifiers work (bg-ui-accent/10). */
 .app-root {
-  --ui-bg: 250 250 252;
+  --ui-bg: 255 245 248;
   --ui-panel: 255 255 255;
   --ui-raised: 255 255 255;
-  --ui-sunken: 243 244 247;
-  --ui-border: 228 230 236;
-  --ui-text: 17 19 31;
-  --ui-muted: 92 97 116;
-  --ui-subtle: 143 148 166;
-  --ui-accent: 99 83 241;
-  --ui-accent-soft: 240 238 255;
-  --ui-accent-text: 79 63 220;
-  --ui-danger: 220 53 69;
-  --ui-success: 22 150 98;
-  --ui-warning: 196 128 6;
-  --ui-bubble: 99 83 241;
+  --ui-sunken: 253 236 242;
+  --ui-border: 247 207 222;
+  --ui-text: 28 10 24;
+  --ui-muted: 133 80 114;
+  --ui-subtle: 176 128 159;
+  --ui-accent: 244 63 94;
+  --ui-accent-soft: 255 241 244;
+  --ui-accent-text: 225 29 72;
+  --ui-danger: 220 38 38;
+  --ui-success: 16 185 129;
+  --ui-warning: 245 158 11;
+  --ui-bubble: 244 63 94;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   color-scheme: light;
 }
 [data-theme='dark'] .app-root {
-  --ui-bg: 12 12 20;
-  --ui-panel: 18 18 29;
-  --ui-raised: 25 25 39;
-  --ui-sunken: 9 9 15;
-  --ui-border: 38 38 56;
-  --ui-text: 236 237 245;
-  --ui-muted: 154 157 178;
-  --ui-subtle: 104 107 130;
-  --ui-accent: 124 110 255;
-  --ui-accent-soft: 34 30 66;
-  --ui-accent-text: 178 168 255;
-  --ui-danger: 248 98 110;
-  --ui-success: 52 199 134;
-  --ui-warning: 240 180 60;
-  --ui-bubble: 104 90 236;
+  --ui-bg: 19 9 18;
+  --ui-panel: 29 14 28;
+  --ui-raised: 38 19 37;
+  --ui-sunken: 14 7 14;
+  --ui-border: 62 27 58;
+  --ui-text: 255 241 244;
+  --ui-muted: 202 166 191;
+  --ui-subtle: 150 114 140;
+  --ui-accent: 244 63 94;
+  --ui-accent-soft: 51 18 42;
+  --ui-accent-text: 251 113 133;
+  --ui-danger: 248 113 113;
+  --ui-success: 52 211 153;
+  --ui-warning: 251 191 36;
+  --ui-bubble: 244 63 94;
   color-scheme: dark;
 }
 .app-root ::-webkit-scrollbar-thumb { background: rgb(var(--ui-border)); }
