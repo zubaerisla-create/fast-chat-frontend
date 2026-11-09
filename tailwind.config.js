@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ['class', '[data-theme="dark"]'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -13,6 +14,24 @@ module.exports = {
         mono: ['var(--font-mono)', 'monospace'],
       },
       colors: {
+        // App design system: values come from CSS variables so light/dark themes switch at runtime
+        ui: {
+          bg: 'rgb(var(--ui-bg) / <alpha-value>)',
+          panel: 'rgb(var(--ui-panel) / <alpha-value>)',
+          raised: 'rgb(var(--ui-raised) / <alpha-value>)',
+          sunken: 'rgb(var(--ui-sunken) / <alpha-value>)',
+          border: 'rgb(var(--ui-border) / <alpha-value>)',
+          text: 'rgb(var(--ui-text) / <alpha-value>)',
+          muted: 'rgb(var(--ui-muted) / <alpha-value>)',
+          subtle: 'rgb(var(--ui-subtle) / <alpha-value>)',
+          accent: 'rgb(var(--ui-accent) / <alpha-value>)',
+          'accent-soft': 'rgb(var(--ui-accent-soft) / <alpha-value>)',
+          'accent-text': 'rgb(var(--ui-accent-text) / <alpha-value>)',
+          danger: 'rgb(var(--ui-danger) / <alpha-value>)',
+          success: 'rgb(var(--ui-success) / <alpha-value>)',
+          warning: 'rgb(var(--ui-warning) / <alpha-value>)',
+          bubble: 'rgb(var(--ui-bubble) / <alpha-value>)',
+        },
         ink: {
           50: '#f0f0f0',
           100: '#e0e0e0',
@@ -42,6 +61,7 @@ module.exports = {
         'fade-in': 'fadeIn 0.2s ease-out',
         'pulse-dot': 'pulseDot 2s infinite',
         'message-in': 'messageIn 0.25s ease-out',
+        'pop-in': 'popIn 0.16s ease-out',
       },
       keyframes: {
         slideIn: {
@@ -55,6 +75,13 @@ module.exports = {
         pulseDot: {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
           '50%': { opacity: '0.5', transform: 'scale(1.2)' },
+        },
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+        popIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px) scale(0.98)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
         messageIn: {
           '0%': { transform: 'translateY(8px)', opacity: '0' },

@@ -35,10 +35,29 @@ export interface LastMessage {
 
 export interface Conversation {
   _id: string;
+  type?: 'direct' | 'group' | 'channel';
+  title?: string;
+  description?: string;
+  avatar?: string;
   participants: User[];
+  members?: { _id: string; id: string; username: string; avatar: string; email?: string; role: 'owner' | 'admin' | 'member' }[];
+  memberCount?: number;
+  myRole?: 'owner' | 'admin' | 'member';
   lastMessage: LastMessage | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface FriendRequest {
+  _id: string;
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'canceled';
+  createdAt: string;
+  updatedAt: string;
+  sender?: User;
+  receiver?: User;
 }
 
 export interface AuthResponse {

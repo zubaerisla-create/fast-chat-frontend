@@ -21,7 +21,6 @@ let _client: any = null;
 function getClient() {
     if (typeof window === 'undefined') return null;
     if (!_client) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const AgoraRTC = require('agora-rtc-sdk-ng');
         _client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     }
@@ -31,7 +30,6 @@ function getClient() {
 // Lazy AgoraRTC accessor (browser-only)
 function getAgoraRTC() {
     if (typeof window === 'undefined') return null;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('agora-rtc-sdk-ng');
 }
 

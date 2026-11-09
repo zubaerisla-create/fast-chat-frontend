@@ -28,6 +28,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+      # Blocks deploys while legal pages still show placeholder business details
+      - run: npm run check:business
+      - run: npm test
       - run: npm run build
 
       - name: Package standalone bundle

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, ArrowLeft, Phone, Video, Paperclip, X, Image as ImageIcon, File as FileIcon, Film, Info, Mic, Trash2, StopCircle } from 'lucide-react';
+import { Send, ArrowLeft, Phone, Video, Paperclip, X, Image as ImageIcon, File as FileIcon, Film, Info, Mic, Trash2, StopCircle, Users, ShieldAlert } from 'lucide-react';
 import { Conversation, Message } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
@@ -12,6 +12,8 @@ import Avatar from '@/components/ui/Avatar';
 import toast from 'react-hot-toast';
 import { format, isToday, isYesterday } from 'date-fns';
 import ConversationInfo from './ConversationInfo';
+import ImageLightbox, { LightboxImage } from './ImageLightbox';
+import { safeMediaUrl } from '@/lib/safeUrl';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -46,6 +48,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [lightboxImageId, setLightboxImageId] = useState<string | null>(null);
 
   // Voice recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -332,6 +335,14 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     }
   });
 
+  // Every image in the loaded conversation, oldest first, for the lightbox's next/previous
+  const lightboxImages: LightboxImage[] = messages.flatMap((m) => {
+    const src = m.fileType === 'image' ? safeMediaUrl(m.fileUrl) : null;
+    return src ? [{ id: m._id, src, name: m.fileName, caption: m.text || undefined }] : [];
+  });
+  const lightboxIndex = lightboxImageId ? lightboxImages.findIndex((img) => img.id === lightboxImageId) : -1;
+  const openImage = (messageId: string) => setLightboxImageId(messageId);
+
   return (
     <div className="flex flex-col h-full flex-1">
       {/* Header */}
@@ -344,11 +355,24 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
             <ArrowLeft size={16} />
           </button>
         )}
-        <Avatar username={other?.username || '?'} size="md" isOnline={isOnline} />
-        <div>
-          <h2 className="font-display font-semibold text-white text-base">{other?.username}</h2>
+        {conversation.type === 'group' ? (
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#635BFF] to-[#00D4FF] flex items-center justify-center text-white shadow-md">
+            <Users size={18} />
+          </div>
+        ) : (
+          <Avatar username={other?.username || '?'} size="md" isOnline={isOnline} />
+        )}
+        <div
+          onClick={() => setShowInfo(true)}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <h2 className="font-display font-semibold text-white text-base">
+            {conversation.type === 'group' ? conversation.title || 'Group' : other?.username}
+          </h2>
           <p className="text-xs text-white/30 font-sans">
-            {isOnline ? (
+            {conversation.type === 'group' ? (
+              `${conversation.memberCount || conversation.members?.length || conversation.participants?.length || 0} members`
+            ) : isOnline ? (
               <span className="text-green-400">Online</span>
             ) : (
               'Offline'
@@ -357,28 +381,32 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <button
-            onClick={() => {
-              if (!other || !socket) return;
-              startOutgoingCall({ receiverId: other._id, callType: 'audio' });
-              socket.emit('initiate_call', { receiverId: other._id, callType: 'audio' });
-            }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
-            title="Audio Call"
-          >
-            <Phone size={18} />
-          </button>
-          <button
-            onClick={() => {
-              if (!other || !socket) return;
-              startOutgoingCall({ receiverId: other._id, callType: 'video' });
-              socket.emit('initiate_call', { receiverId: other._id, callType: 'video' });
-            }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
-            title="Video Call"
-          >
-            <Video size={20} />
-          </button>
+          {conversation.type !== 'group' && other && (
+            <>
+              <button
+                onClick={() => {
+                  if (!other || !socket) return;
+                  startOutgoingCall({ receiverId: other._id, callType: 'audio' });
+                  socket.emit('initiate_call', { receiverId: other._id, callType: 'audio' });
+                }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
+                title="Audio Call"
+              >
+                <Phone size={18} />
+              </button>
+              <button
+                onClick={() => {
+                  if (!other || !socket) return;
+                  startOutgoingCall({ receiverId: other._id, callType: 'video' });
+                  socket.emit('initiate_call', { receiverId: other._id, callType: 'video' });
+                }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10 transition-all"
+                title="Video Call"
+              >
+                <Video size={20} />
+              </button>
+            </>
+          )}
           <button
             onClick={() => setShowInfo(true)}
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showInfo ? 'text-[#7C6EFF] bg-[#7C6EFF]/10' : 'text-white/40 hover:text-[#7C6EFF] hover:bg-[#7C6EFF]/10'}`}
@@ -425,7 +453,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
                   const showAvatar =
                     !prevMsg || prevMsg.senderId._id !== msg.senderId._id;
                   return (
-                    <MessageBubble key={msg._id} message={msg} showAvatar={showAvatar} />
+                    <MessageBubble key={msg._id} message={msg} showAvatar={showAvatar} onImageClick={openImage} />
                   );
                 })}
               </div>
@@ -550,14 +578,22 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         </p>
       </div>
 
-      {other && (
-        <ConversationInfo
-          isOpen={showInfo}
-          onClose={() => setShowInfo(false)}
-          user={other}
-          conversationId={conversation._id}
+      {lightboxIndex >= 0 && (
+        <ImageLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onIndexChange={(i) => setLightboxImageId(lightboxImages[i].id)}
+          onClose={() => setLightboxImageId(null)}
         />
       )}
+
+      <ConversationInfo
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        conversation={conversation}
+        onConversationUpdated={fetchMessages}
+        onConversationLeft={onBack}
+      />
     </div>
   );
 }

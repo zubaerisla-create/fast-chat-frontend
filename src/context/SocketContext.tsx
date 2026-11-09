@@ -19,6 +19,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const { user, token } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  // Held in state too, so components re-render once the socket exists
+  const [socketState, setSocketState] = useState<Socket | null>(null);
 
   useEffect(() => {
     if (!user || !token) return;
@@ -30,6 +32,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
 
     socketRef.current = socket;
+    setSocketState(socket);
 
     socket.on('connect', () => {
       console.log('Socket connected');
@@ -44,6 +47,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setSocketState(null);
     };
   }, [user, token]);
 
@@ -58,12 +62,20 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const onNewMessage = (callback: (msg: Message) => void) => {
     const socket = socketRef.current;
     if (!socket) return () => { };
-    socket.on('newMessage', callback);
-    return () => socket.off('newMessage', callback);
+    const wrapped = (data: any) => {
+      const msg = data?.message || data;
+      callback(msg);
+    };
+    socket.on('newMessage', wrapped);
+    socket.on('receiveMessage', wrapped);
+    return () => {
+      socket.off('newMessage', wrapped);
+      socket.off('receiveMessage', wrapped);
+    };
   };
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current, onlineUsers, sendSocketMessage, joinConversation, onNewMessage }}>
+    <SocketContext.Provider value={{ socket: socketState, onlineUsers, sendSocketMessage, joinConversation, onNewMessage }}>
       {children}
     </SocketContext.Provider>
   );

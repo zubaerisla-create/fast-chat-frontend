@@ -122,3 +122,104 @@ html, body {
   background: rgba(124, 110, 255, 0.15);
   border-left: 2px solid var(--accent);
 }
+
+/* Body text on the public legal pages */
+.legal-prose {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+.legal-prose > * + * {
+  margin-top: 0.85rem;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.legal-prose li + li {
+  margin-top: 0.35rem;
+}
+.legal-prose strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+}
+.legal-prose a {
+  color: #A89CFF;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Marketing pages: a short fade-up on first paint, skipped for reduced motion */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.rise-1 { animation-delay: 80ms; }
+.rise-2 { animation-delay: 160ms; }
+.rise-3 { animation-delay: 240ms; }
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+  #page-scroll { scroll-behavior: auto; }
+}
+
+/* ─── App design system (signed-in product) ─────────────────────────────────
+   Light is the default; [data-theme="dark"] on <html> switches. Values are RGB
+   triplets so Tailwind opacity modifiers work (bg-ui-accent/10). */
+.app-root {
+  --ui-bg: 250 250 252;
+  --ui-panel: 255 255 255;
+  --ui-raised: 255 255 255;
+  --ui-sunken: 243 244 247;
+  --ui-border: 228 230 236;
+  --ui-text: 17 19 31;
+  --ui-muted: 92 97 116;
+  --ui-subtle: 143 148 166;
+  --ui-accent: 99 83 241;
+  --ui-accent-soft: 240 238 255;
+  --ui-accent-text: 79 63 220;
+  --ui-danger: 220 53 69;
+  --ui-success: 22 150 98;
+  --ui-warning: 196 128 6;
+  --ui-bubble: 99 83 241;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  color-scheme: light;
+}
+[data-theme='dark'] .app-root {
+  --ui-bg: 12 12 20;
+  --ui-panel: 18 18 29;
+  --ui-raised: 25 25 39;
+  --ui-sunken: 9 9 15;
+  --ui-border: 38 38 56;
+  --ui-text: 236 237 245;
+  --ui-muted: 154 157 178;
+  --ui-subtle: 104 107 130;
+  --ui-accent: 124 110 255;
+  --ui-accent-soft: 34 30 66;
+  --ui-accent-text: 178 168 255;
+  --ui-danger: 248 98 110;
+  --ui-success: 52 199 134;
+  --ui-warning: 240 180 60;
+  --ui-bubble: 104 90 236;
+  color-scheme: dark;
+}
+.app-root ::-webkit-scrollbar-thumb { background: rgb(var(--ui-border)); }
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgb(var(--ui-sunken));
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(var(--ui-panel) / 0.6), transparent);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}

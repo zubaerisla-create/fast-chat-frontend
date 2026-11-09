@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginUser, registerUser, sendSignupOTP } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { safeNextPath } from '@/lib/safeUrl';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -15,6 +16,13 @@ export default function AuthPage() {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  // ?mode=register opens the sign-up tab; ?next= returns to e.g. a chosen plan after signing in
+  const [next, setNext] = useState<string | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'register') setMode('register');
+    setNext(safeNextPath(params.get('next')));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +46,7 @@ export default function AuthPage() {
       const { token, user } = res.data;
       login(user, token);
       toast.success(mode === 'login' ? 'Welcome back!' : 'Account created!');
-      router.push('/chat');
+      router.push(next ?? '/home');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Something went wrong');
     } finally {
@@ -104,17 +112,17 @@ export default function AuthPage() {
 
             <div>
               <label className="block text-xs text-white/40 mb-1.5 font-sans uppercase tracking-wider">
-                Email
+                {mode === 'login' ? 'Email or Username' : 'Email'}
               </label>
               <input
-                type="email"
+                type={mode === 'login' ? 'text' : 'email'}
                 required
                 value={form.email}
                 onChange={(e) => {
                   setForm({ ...form, email: e.target.value, otp: '' });
                   setOtpSent(false);
                 }}
-                placeholder="you@example.com"
+                placeholder={mode === 'login' ? 'you@example.com or username' : 'you@example.com'}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm font-sans outline-none input-glow transition-all focus:border-[#7C6EFF]/50"
               />
             </div>

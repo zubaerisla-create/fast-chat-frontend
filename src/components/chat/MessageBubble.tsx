@@ -6,10 +6,12 @@ import { format } from 'date-fns';
 import Avatar from '@/components/ui/Avatar';
 import { Download, FileText, Film, Play, Pause, Mic } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { safeMediaUrl } from '@/lib/safeUrl';
 
 interface MessageBubbleProps {
   message: Message;
   showAvatar?: boolean;
+  onImageClick?: (messageId: string) => void;
 }
 
 function VoicePlayer({ url }: { url: string }) {
@@ -80,9 +82,10 @@ function VoicePlayer({ url }: { url: string }) {
   );
 }
 
-export default function MessageBubble({ message, showAvatar = true }: MessageBubbleProps) {
+export default function MessageBubble({ message, showAvatar = true, onImageClick }: MessageBubbleProps) {
   const { user } = useAuth();
   const isOwn = message.senderId._id === user?._id;
+  const fileUrl = safeMediaUrl(message.fileUrl);
 
   return (
     <div className={`flex items-end gap-2 message-animate ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -101,29 +104,34 @@ export default function MessageBubble({ message, showAvatar = true }: MessageBub
             : 'bg-white/8 border border-white/8 text-white/90 rounded-bl-sm'
             }`}
         >
-          {message.fileUrl && (
+          {fileUrl && (
             <div className="mb-2 max-w-full overflow-hidden rounded-lg">
               {message.fileType === 'image' ? (
-                <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => onImageClick?.(message._id)}
+                  aria-label={`View image${message.fileName ? ` ${message.fileName}` : ''}`}
+                  className="block relative rounded-lg cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                >
                   <img
-                    src={message.fileUrl}
+                    src={fileUrl}
                     alt={message.fileName || 'Attachment'}
-                    className="max-h-60 w-auto object-contain rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
-                    onClick={() => window.open(message.fileUrl, '_blank')}
+                    loading="lazy"
+                    className="max-h-60 w-auto object-contain rounded-lg hover:opacity-95 transition-opacity"
                   />
-                </div>
+                </button>
               ) : message.fileType === 'video' ? (
                 <video
-                  src={message.fileUrl}
+                  src={fileUrl}
                   controls
                   className="max-h-60 w-full rounded-lg bg-black/20"
                 />
               ) : (message.fileType === 'voice' || message.fileType === 'audio' ||
-                (message.fileUrl && /\.(webm|mp3|wav|ogg|m4a)$/i.test(message.fileUrl))) ? (
-                <VoicePlayer url={message.fileUrl} />
+                /\.(webm|mp3|wav|ogg|m4a)$/i.test(fileUrl)) ? (
+                <VoicePlayer url={fileUrl} />
               ) : (
                 <a
-                  href={message.fileUrl}
+                  href={fileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3 bg-black/20 hover:bg-black/30 rounded-xl transition-all border border-white/5 group/file"
